@@ -18,6 +18,8 @@ library(plyr)
 library(ggplot2)
 library(broom)
 
+getwd()
+
 #read in orginal data
 merged.2010<-read.dta("1626360926english_merge_2010_americasbarometer_v14v3.dta", convert.factors=TRUE, missing.type = TRUE, convert.underscore = TRUE, warn.missing.labels = TRUE) 
 View(merged.2010)
