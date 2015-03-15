@@ -14,15 +14,14 @@
 
 library(foreign)
 library(dplyr)
-library(plyr)
 library(ggplot2)
 library(broom)
 
-getwd()
+#getwd()
 
 #read in orginal data
 merged.2010<-read.dta("1626360926english_merge_2010_americasbarometer_v14v3.dta", convert.factors=TRUE, missing.type = TRUE, convert.underscore = TRUE, warn.missing.labels = TRUE) 
-View(merged.2010)
+#View(merged.2010)
 
 #create cleaned data file
 
@@ -53,7 +52,7 @@ clean.2010 <- clean.2010 %>%
                                 ifelse(pais == "Argentina" | pais == "Chile" | pais == "Paraguay" | pais == "Uruguay"| pais == "Brazil", "Southern Cone and Brazil", "Caribbean")))) %>%
   arrange(colorr, pais)
 
-View(clean.2010)
+#View(clean.2010)
 
 #check for 39,238 respondents in 23 of the 26 countries, as stated in paper
 unique(clean.2010$pais)

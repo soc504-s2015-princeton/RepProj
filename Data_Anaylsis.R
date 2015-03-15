@@ -13,11 +13,11 @@
 library(stargazer)
 library(foreign)
 library(dplyr)
-library(plyr)
 library(ggplot2)
 library(broom)
 library(gridExtra)
 
+setwd("~/Desktop/R working directory/RepProj")
 clean.2010<-read.dta("clean2010data.dta")
 
 #for figures: in export , save as image, adjust width and height, and then save as
