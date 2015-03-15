@@ -9,7 +9,7 @@
 #####                      1-subset to 23/26 total countries                                                    #####
 #####                      2-create 2 new variables (tone $ region) needed for anaylsis                         #####
 #####################################################################################################################
-test
+
 #install.packages("foreign", "broom")
 
 library(foreign)
@@ -45,7 +45,7 @@ clean.2010$pais <- factor(clean.2010$pais)
 clean.2010 <- clean.2010 %>% 
   #filter(!is.na(colorr)) %>%
   mutate(tone = ifelse(colorr == 1 | colorr == 2 | colorr == 3, "light", 
-                       ifelse(colorr == 4 | colorr == 5 | colorr == 6, "medium", "dark"))) %>%
+                       ifelse(colorr == 4 | colorr == 5, "medium", "dark"))) %>%
   mutate(region = ifelse(pais == "Panama" | pais == "Costa Rica"| pais == "Honduras"| pais == "Mexico"| pais =="Guatemala"| pais == "El Salvador"| pais == "Nicaragua", "Central America and Mexico",
                          ifelse(pais == "Bolivia"| pais == "Peru"| pais == "Venezuela"| pais == "Colombia"| pais == "Ecuador", "Andean",
                                 ifelse(pais == "Argentina" | pais == "Chile" | pais == "Paraguay" | pais == "Uruguay"| pais == "Brazil", "Southern Cone and Brazil", "Caribbean")))) %>%
