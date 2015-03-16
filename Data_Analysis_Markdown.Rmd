@@ -5,6 +5,14 @@ date: "March 15, 2015"
 output: html_document
 ---
 
+Replicated Paper:
+Pigmentocracy in the Americas: How is Educational Attainment Related to Skin Color?
+By Edward Telles and Liza Steele
+
+
+Abstract: 
+This Insights report addresses the question of whether educational attainment, a key indicator of socioeconomic status, is related to skin color in Latin America and the Caribbean. Based on data from the 2010 AmericasBarometer, our analysis shows that persons with lighter skin color tend to have higher levels of schooling than those with dark skin color throughout the region, with few exceptions (2012:i)
+
 
 ```{r}
 #####################################################################################################################
@@ -30,13 +38,28 @@ library(gridExtra)
 
 setwd("~/Desktop/R working directory/RepProj")
 clean.2010<-read.dta("clean2010data.dta")
+```
 
+Here is the set up for Figure 2 by Telles and Steele:
+
+Figure 2
+In Figure 2, we show the relation between skin color and schooling for 23 countries in the 2010 AmericasBarometer.4 Our dependent variable is educational attainment, which is based on the grade level completed by the respondent. 
+
+Figure 2 graphically represents the relation between educational attainment and skin color in four regions, where the lightest persons are near 1 and the darkest near 11. We present data points only where there are at least 30 persons from the survey. Categories with fewer than 30 respondents are combined with contiguous groups (for example, 1’s are combined with 2’s in many countries, in which case the combined category is reported as a 2) (2012:2)
+
+image: ![](Images/Figure2_original.tiff)
+
+Here is our progress so far: 
+
+
+```{r}
 ####################################################################################################################
 #Creating Figure 2: Relation between Skin Color and Educational Attainment in Latin America and the Caribbean
 #facet by the four specified regions, 
 #Note: Categories with fewer than 30 respondents are combined with continuous groups 
 #(for example, 1’s are combined with 2’s in many countries, in which case the combined category is reported as a 2)
 ####################################################################################################################
+
 
 #Note: for Figure 2 below, we still have 1 major problem to resolve: 
 #recode the values of colorr to get the groups to collapse
@@ -101,8 +124,16 @@ test %>%
 
 ```
 
+Here is the set up for Figure 3 by Telles and Steele:
 
-<center><img src="~/Desktop/R working directory/RepProj/Images/Figure2_original.tiff" width="700px"/></center>
+Figure 3
+
+Figure 3 shows the mean levels of schooling for the residents with the lightest skin (1-3) compared to those with darkest skin (6+) in all 23 countries, ordered by the size of the average difference between the two. Figure 3 also presents confidence intervals around these means, given that there is a margin of error for these population samples, as there is in all survey samples of large populations (2012:4)
+
+image: ![](Images/Figure3_orginal.tiff)
+
+
+Here is our replication: 
 
 
 ```{r}
@@ -170,8 +201,18 @@ fig3.note
 
 ````
 
-<center><img src="Images/Figure3_original.tiff" width="700px"/></center>
+Here is the set up for the Appendix and Figure 4 by Telles and Steele:
 
+Appendix and Figure 4
+
+Since other factors besides color may affect years of schooling, we run a regression analysis predicting years of education by skin color, as well as class origin, age, sex, urban/rural residence and country of residence. We run the regression model only for the eight countries (Bolivia, Brazil, Colombia, Dominican Republic, Ecuador, Guatemala, Mexico and Peru) in which the class origin data are available[…] The results of the OLS regression analysis are shown in the first column of the Appendix and are summarized graphically in Figure 4. In order to compare the relative sizes of the effects, the figure presents standardised coefficients (2012:5)
+
+The second OLS regression model reported in the Appendix includes interactions between skin color and an indicator variable for each country, using Brazil as the country of reference (2012:6). 
+
+image: ![](Images/Appendix_original.tiff)
+image: ![](Images/Figure4_original.tiff)
+
+Here is our replication: 
 
 
 ```{r}
@@ -238,8 +279,6 @@ stargazer(reg1, reg2,
 
 ```
 
-<center><img src="Images/Appendix_original.tiff"/></center>
-
 
 
 ```{r}
@@ -294,6 +333,7 @@ fig4.note
 
 ```
 
-<center><img src="Images/Figure4_original.tiff"/></center>
+
+
 
 
