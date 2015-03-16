@@ -130,7 +130,7 @@ Figure 3
 
 Figure 3 shows the mean levels of schooling for the residents with the lightest skin (1-3) compared to those with darkest skin (6+) in all 23 countries, ordered by the size of the average difference between the two. Figure 3 also presents confidence intervals around these means, given that there is a margin of error for these population samples, as there is in all survey samples of large populations (2012:4)
 
-image: ![](Images/Figure3_orginal.tiff)
+image: ![](Images/Figure3_original.tiff)
 
 
 Here is our replication: 
@@ -171,7 +171,7 @@ pais_ed <- clean.2010 %>%
       #ex code: levels = c("Ideal", "Very Good", "Fair", "Good", "Premium"))
 
 #Figure 3
-fig3 <- ggplot(pais_ed, aes( x = factor(tone), y = mean_ed, fill = tone)) +
+fig3 <- ggplot(pais_ed, aes( x = factor(tone), y = mean_ed, fill = tone))+
   ylim(0, 14) +
   ylab("Years of Schooling") + xlab("") +
   geom_bar(stat="identity") + 
@@ -274,7 +274,9 @@ stargazer(reg1, reg2,
           no.space = TRUE,
           dep.var.caption = "",
           dep.var.labels =  "",
-          title = "Ordinary Least Squares Models Predicting Years of Schooling in Select Latin American Countries, 2010"
+          title = "Ordinary Least Squares Models Predicting Years of Schooling in Select         
+          Latin American Countries, 2010", 
+          out="Appendix_replication.txt"
 )
 
 ```
