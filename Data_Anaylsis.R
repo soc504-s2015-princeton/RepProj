@@ -4,6 +4,8 @@
 #####   Authors:    Megan Blanchard and Kalyani Jayasankar                                                      #####
 #####   Input:      clean2010data.dta                                                                           ##### 
 #####   Output:     This code does anaylsis on the clean data file. We create 3 figures :                       #####
+#####               Figure 3: Bar Graph of Average Ed by Skin Color for each country                            #####
+#####   
 #####   Notes:                                                                                                  #####
 #####                                                                                                           #####
 #####################################################################################################################
@@ -20,17 +22,14 @@ library(gridExtra)
 setwd("~/Desktop/R working directory/RepProj")
 clean.2010<-read.dta("clean2010data.dta")
 
-#for figures: in export , save as image, adjust width and height, and then save as
-
-
 ####################################################################################################################
-#Creating Figure 3: Avg Ed Attainment for Persons with Darkest and Lightest Skin Colors in the Americas, 2010
+#Creating Figure 3: Avg Ed for Skin Colors in the Americas, 2010
 #shows the mean levels of schooling for the residents with the lightest skin (1-3) 
 #compared to those with darkest skin (6+) in all 23 countries, 
 #ordered by the size of the average difference between the two. 
 ####################################################################################################################
 
-#prep
+#prep for Figure 3
 
 #Create a new dataframe pais_ed
 pais_ed <- clean.2010 %>%
@@ -45,19 +44,18 @@ pais_ed <- clean.2010 %>%
   summarise(mean_ed= mean(ed))
 
 
-#formulas for finding the CI:
-#se <- sd(x)/sqrt(n)
-#mean(x) + c(-1,1) * qt(0.975, n-1) * se
+#Note for reference- formulas for finding the CI:
+# CI = mean(x) + c(-1,1) * qt(0.975, n-1) * se, where se = sd(x)/sqrt(n)
 
-####################################################################################################################
-#Create the bargraph
-####################################################################################################################
 
-#need to get scale to extend past 10 on axis
-#need to reorder the position or countries based on difference in mean between dark and light skin
-#to change plot order of facet grid, change the order of variable levels with factor()
-#ex code: levels = c("Ideal", "Very Good", "Fair", "Good", "Premium"))
+#Note: for Figure 3 below, we still need to: 
+#1- specify the demensions in the code
+#2- get scale to extend past 10 on axis
+#3- reorder the position or countries based on difference in mean between dark and light skin
+      #to change plot order of facet grid, change the order of variable levels with factor()
+      #ex code: levels = c("Ideal", "Very Good", "Fair", "Good", "Premium"))
 
+#Figure 3
 fig3 <- ggplot(pais_ed, aes( x = factor(tone), y = mean_ed, fill = tone)) +
   ylim(0, 14) +
   ylab("Years of Schooling") + xlab("") +
@@ -87,30 +85,26 @@ fig3.note
 
 
 ####################################################################################################################
-#Creating:
-#Appendix Table: Ordinary Least Squares Models Predicting Years of Schooling in Select Latin American Countries, 2010 
-#Figure 4. Effects of Skin Color and Other Factors on Educational Attainment in Select Latin American Countries
+#Creating Appendix Table: OLS Models Predicting Years of Schooling in Select Latin American Countries, 2010 
+#And Figure 4. Effects of Skin Color and Other Factors on Educational Attainment 
 ####################################################################################################################
 
-#regression models 1 and 2
-#(2 problems to resolve: excluding parental occupation, also find out scaling for non numerics)
+#run regression models 1 and 2
+#Note: We have 2 problems to resolve: 
+#1)finding how parental occupation is coded (currently excluded from anaylsis)
+#2)finding out scaling for non numerics in the regression 
 
-#prep
+# data prep
 clean.2010$colorr[clean.2010$colorr=="97 Colud not be classified"] <- NA
-table(clean.2010$colorr)
 clean.2010$colorr <- factor(clean.2010$colorr)
-table(clean.2010$colorr)
-summary(clean.2010$colorr)
 clean.2010$colorr <- as.numeric(clean.2010$colorr)
 
-#select correct countries for analysis 
+#select correct countries for analysis in new data frame
 eight_pais <- clean.2010 %>%
   filter(pais %in% c("Brazil", "Mexico", "Guatemala", "Colombia", "Ecuador", "Bolivia", "Peru", "Dominican Republic"))
 
+#make pais a factor
 eight_pais$pais <- factor(eight_pais$pais)
-#check
-levels(eight_pais$pais)
-
 #make Brazil the reference category
 eight_pais$pais <- relevel(eight_pais$pais, ref = "Brazil")
 #check
@@ -122,10 +116,10 @@ model1<- summary(reg1)
 model1_Rsquared <- model1$r.squared
 model1_fstat <- model1$fstatistic["value"]
 
-#check to make sure the scaling works
+#check to make sure the scaling works to standardize the coefficients- do by hand, then compare using "scale"
 eight_pais$ed.std<- (eight_pais$ed - mean(eight_pais$ed, na.rm=TRUE))/ sd(eight_pais$ed, na.rm=TRUE)
 test_model <- lm(ed.std ~ scale(colorr) + q1 + scale(q2) + ur + pais, data=eight_pais)
-#(yes!)
+#(yes! it works)
 
 #model 2
 reg2<- lm(scale(ed)~ scale(colorr) + q1 + scale(q2) + ur + pais + pais:scale(colorr), data=eight_pais)
@@ -133,20 +127,12 @@ model2<- summary(reg2)
 model2_R_squared <- model2$r.squared
 model2_Fstat<- model2$fstatistic["value"]
 
-#graph 1
-model1_CI <- confint(model1)
-model1_CIlower <-model1_CI[ , 1]
-model1_CIupper <-model1_CI[ , 2]
-
-#prep
+#prep for table
 labels = c("Skin color", "Female", "Age", "Urban", "Mexico", "Guatemala", "Colombia", "Ecuador", "Bolivia", "Peru", "Dominican Republic",
            "Interaction: Mexico X skin color", "Interaction: Guatemala X skin color", "Interaction: Colombia X skin color", "Interaction: Ecuador X skin color", "Interaction: Bolivia X skin color", "Interaction: Peru X skin color", "Interaction: Dominican Republic X skin color",
            "Constant")
 
-####################################################################################################################
-#Create Appendix Table
-####################################################################################################################
-
+#Appendix Table
 stargazer(reg1, reg2, 
           type= "text", 
           covariate.labels = labels,
@@ -157,14 +143,14 @@ stargazer(reg1, reg2,
           title = "Ordinary Least Squares Models Predicting Years of Schooling in Select Latin American Countries, 2010"
 )
 
-####################################################################################################################
-#Create Graph 
-####################################################################################################################
+# Figure 4 
 
-
+#prep for graph
+#rerunning regreesion for correct order in graph
 model1.graph <- lm(scale(ed) ~ scale(colorr) + ur + scale(q2) + q1 + pais, data=eight_pais)
 model1.graph$coefficients
 
+#creating data frame of coefficients and CI's
 graph.coef <- summary(model1.graph)$coefficients[2:5, 1]
 model1.CI <- confint(model1.graph)
 model1.CIlower <- model1.CI[2:5 , 1]
@@ -178,6 +164,7 @@ frame <- data.frame(variable = labels,
                     ci.lower = model1.CIlower,
                     ci.upper = model1.CIupper)
 
+#reorder variables
 frame$variable.order <- factor(frame$variable, levels = c("Female", "Age", "Urban", "Skin Color"))
 
 
