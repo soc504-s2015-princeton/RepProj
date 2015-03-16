@@ -53,5 +53,6 @@ clean.2010 <- clean.2010 %>%
 unique(clean.2010$pais)
 unique(clean.2010$region)
 unique(clean.2010$tone)
+unique(clean.2010$colorr)
 
 write.dta(clean.2010, "clean2010data.dta")

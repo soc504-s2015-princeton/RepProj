@@ -1,3 +1,12 @@
+---
+title: "RepProj_Megan_Kalyani"
+author: "Megan Blanchard"
+date: "March 15, 2015"
+output: html_document
+---
+
+
+```{r}
 #####################################################################################################################
 #####   Assignment: Replication Project (Part 1)                                                                #####
 #####   Due Date:   3/15/2015                                                                                   #####
@@ -29,7 +38,7 @@ clean.2010<-read.dta("clean2010data.dta")
 #(for example, 1’s are combined with 2’s in many countries, in which case the combined category is reported as a 2)
 ####################################################################################################################
 
-#Note: for Figure 1 below, we still have 1 major problem to resolve: 
+#Note: for Figure 2 below, we still have 1 major problem to resolve: 
 #recode the values of colorr to get the groups to collapse
 #(the plot printed here is the uncoded values)
 
@@ -61,7 +70,7 @@ for(country in unique(test$pais)){
     }
   }
 }
-
+ 
 test 
 
 #check to make sure there are no vlaues between 1 and 29
@@ -90,8 +99,13 @@ test %>%
 #}
 
 
+```
 
 
+<center><img src="~/Desktop/R working directory/RepProj/Images/Figure2_original.tiff" width="700px"/></center>
+
+
+```{r}
 ####################################################################################################################
 #Creating Figure 3: Avg Ed for Skin Colors in the Americas, 2010
 #shows the mean levels of schooling for the residents with the lightest skin (1-3) 
@@ -154,6 +168,13 @@ fig3.note <- arrangeGrob(fig3,
 fig3.note
 
 
+````
+
+<center><img src="Images/Figure3_original.tiff" width="700px"/></center>
+
+
+
+```{r}
 ####################################################################################################################
 #Creating Appendix Table: OLS Models Predicting Years of Schooling in Select Latin American Countries, 2010 
 #And Figure 4. Effects of Skin Color and Other Factors on Educational Attainment 
@@ -215,6 +236,13 @@ stargazer(reg1, reg2,
           title = "Ordinary Least Squares Models Predicting Years of Schooling in Select Latin American Countries, 2010"
 )
 
+```
+
+<center><img src="Images/Appendix_original.tiff"/></center>
+
+
+
+```{r}
 # Figure 4 
 
 #prep for graph
@@ -261,4 +289,11 @@ fig4.note <- arrangeGrob(fig4,
                                         gp = gpar(fontface = "italic", fontsize = 10)))
 
 fig4.note
+
+
+
+```
+
+<center><img src="Images/Figure4_original.tiff"/></center>
+
 
