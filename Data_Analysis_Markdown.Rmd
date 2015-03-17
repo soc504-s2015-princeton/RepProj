@@ -1,27 +1,38 @@
+--- 
+title: "RepProj_Megan_Kalyani"
+author: "Megan and Kalyani"
+date: "March 15, 2015"
+output: html_document
+---
+
 **Replicated Paper:**
+
 Pigmentocracy in the Americas: How is Educational Attainment Related to Skin Color?
 By Edward Telles and Liza Steele
 
 
 **Paper Overview:**
+
 This Insights report addresses the question of whether educational attainment, a key indicator of socioeconomic status, is related to skin color in Latin America and the Caribbean. Based on data from the 2010 AmericasBarometer, our analysis shows that persons with lighter skin color tend to have higher levels of schooling than those with dark skin color throughout the region, with few exceptions (2012:i)
 
-Figure 1 in the paper is an image to aid with the understanding of a variable(colorr):
+**Figure 1 in the paper is an image to aid with the understanding of a variable(colorr):**
 
-image: ! [](Images/Figure1_original(do_not_rep).tiff)
+![](Images/Figure1_original(do_not_rep).tiff)
 
 (There is nothing to replicate)
 
 **Here is the set up for Figure 2 by Telles and Steele:**
+
 In Figure 2, we show the relation between skin color and schooling for 23 countries in the 2010 AmericasBarometer.4 Our dependent variable is educational attainment, which is based on the grade level completed by the respondent. 
 
 Figure 2 graphically represents the relation between educational attainment and skin color in four regions, where the lightest persons are near 1 and the darkest near 11. We present data points only where there are at least 30 persons from the survey. Categories with fewer than 30 respondents are combined with contiguous groups (for example, 1’s are combined with 2’s in many countries, in which case the combined category is reported as a 2) (2012:2)
 
 **Here is the figure from the paper:**
-image: ![](Images/Figure2_original.tiff)
+
+![](Images/Figure2_original.tiff)
 
 **Here is our progress so far:** 
-```{r}
+```{r message=FALSE, eval=FALSE}
 #####################################################################################################################
 #####   Assignment: Replication Project (Part 1)                                                                #####
 #####   Due Date:   3/15/2015                                                                                   #####
@@ -37,24 +48,26 @@ image: ![](Images/Figure2_original.tiff)
 
 #install.packages("stargazer")
 #install.packages("gridExtra")
+#install.packages("xtable")
 library(stargazer)
 library(foreign)
 library(dplyr)
 library(ggplot2)
 library(broom)
 library(gridExtra)
+library(xtable)
 
 setwd("~/Desktop/R working directory/RepProj")
 clean.2010<-read.dta("clean2010data.dta")
 ```
 
 
-```{r}
+```{r message=FALSE, eval=FALSE}
 ####################################################################################################################
-#Creating Figure 2: Relation between Skin Color and Educational Attainment in Latin America and the Caribbean
-#facet by the four specified regions, 
-#Note: Categories with fewer than 30 respondents are combined with continuous groups 
-#(for example, 1’s are combined with 2’s in many countries, in which case the combined category is reported as a 2)
+#####Creating Figure 2: Relation between Skin Color and Educational Attainment in Latin America and the Caribbean
+#####facet by the four specified regions, 
+#####Note: Categories with fewer than 30 respondents are combined with continuous groups 
+#####(for example, 1’s are combined with 2’s in many countries, in which case the combined category is reported as a 2)
 ####################################################################################################################
 
 
@@ -118,25 +131,59 @@ test %>%
 #clean.2010 $colorr_recode <- mapvalues(clean.2010$colorr, from= recode_df[ , "colorr"], to= recode_df[ ,"colorr_recode"])
 #}
 
+#practice code
+#grab mean ed
+#mean_ed_graph <- clean.2010 %>%
+  #mutate(colorr=as.numeric(colorr)) %>%
+  #group_by(colorr, pais, region) %>%
+  #summarise(mean_ed = mean(ed))
+
+#figure 2 shell
+#change plot order of facet wrap
+mean_ed_graph$region <- factor(mean_ed_graph$region, levels = c("Central America and Mexico", "Andean", "Southern Cone and Brazil", "Caribbean"))
+levels(mean_ed_graph$region)
+
+p <- ggplot(data= mean_ed_graph, aes(x=colorr, y=mean_ed, color=pais))
+p+ layer (geom="line") +
+  facet_wrap(~region) +
+  xlab("Skin Shade") + ylab("Mean Years of Education") +
+  #ylim(5, 13) +
+  ggtitle("Relation between Skin Color and Educational Attainment \n\nin Latin America and the Caribbean") +
+  theme(plot.title = element_text(lineheight=.6, face="bold", size = 12),
+        strip.text.x = element_text(face = "bold", hjust= 0), 
+        strip.background = element_rect(colour="white", fill="white"), 
+        panel.background = element_rect(fill = 'white', colour = 'white'),
+        axis.text = element_text(colour = "black"), 
+        axis.title = element_text(face= "bold"),
+        panel.grid.major.y = element_line(colour="dark gray", linetype="solid"),
+        panel.grid.minor = element_blank(),
+        axis.line= element_line(colour= "dark gray")) +
+  scale_x_continuous(breaks=1:11)
+
+
+
 
 ```
 
 **Here is the set up for Figure 3 by Telles and Steele:**
+
 Figure 3 shows the mean levels of schooling for the residents with the lightest skin (1-3) compared to those with darkest skin (6+) in all 23 countries, ordered by the size of the average difference between the two. Figure 3 also presents confidence intervals around these means, given that there is a margin of error for these population samples, as there is in all survey samples of large populations (2012:4)
 
 **Here is the figure from the paper:**
-image: ![](Images/Figure3_original.tiff)
+
+![](Images/Figure3_original.tiff)
 
 **Here is our replication:**
-image: ![](Figure3_replication.tiff
+
+![](Images/Figure3_replication.tiff)
 
 **Here is our code:**
-```{r}
+
+```{r message=FALSE, eval=FALSE}
 ####################################################################################################################
-#Creating Figure 3: Avg Ed for Skin Colors in the Americas, 2010
-#shows the mean levels of schooling for the residents with the lightest skin (1-3) 
-#compared to those with darkest skin (6+) in all 23 countries, 
-#ordered by the size of the average difference between the two. 
+#####shows the mean levels of schooling for the residents with the lightest skin (1-3) 
+#####compared to those with darkest skin (6+) in all 23 countries, 
+#####ordered by the size of the average difference between the two. 
 ####################################################################################################################
 
 #prep for Figure 3
@@ -196,24 +243,35 @@ fig3.note <- arrangeGrob(fig3,
 ````
 
 **Here is the set up for the Appendix and Figure 4 by Telles and Steele:**
+
 Since other factors besides color may affect years of schooling, we run a regression analysis predicting years of education by skin color, as well as class origin, age, sex, urban/rural residence and country of residence. We run the regression model only for the eight countries (Bolivia, Brazil, Colombia, Dominican Republic, Ecuador, Guatemala, Mexico and Peru) in which the class origin data are available[…] The results of the OLS regression analysis are shown in the first column of the Appendix and are summarized graphically in Figure 4. In order to compare the relative sizes of the effects, the figure presents standardised coefficients (2012:5)
 
 The second OLS regression model reported in the Appendix includes interactions between skin color and an indicator variable for each country, using Brazil as the country of reference (2012:6). 
 
-**Here is the Appendix Table and Figure 4 from the paper**
-image: ![](Images/Appendix_original.tiff)
-image: ![](Images/Figure4_original.tiff)
+**Here is the Appendix Table from the paper:**
+
+![](Images/Appendix_original.tiff)
 
 **Here is our replication:** 
-image: ![](Images/Appendix_replication.txt)
-image: ![](Images/Figure4_replication.tiff)
 
-**Here is our code**
+![](Images/Appendix_replication.tiff)
 
-```{r}
+
+**Here is the Figure 4 from the paper:**
+
+![](Images/Figure4_original.tiff)
+
+**Here is our replication:** 
+
+![](Images/Figure4_replication.tiff)
+
+
+**Here is our code:**
+
+```{r message=FALSE, eval=FALSE}
 ####################################################################################################################
-#Creating Appendix Table: OLS Models Predicting Years of Schooling in Select Latin American Countries, 2010 
-#And Figure 4. Effects of Skin Color and Other Factors on Educational Attainment 
+#####Creating Appendix Table: OLS Models Predicting Years of Schooling in Select Latin American Countries, 2010 
+#####And Figure 4. Effects of Skin Color and Other Factors on Educational Attainment 
 ####################################################################################################################
 
 
@@ -265,23 +323,23 @@ labels = c("Skin color", "Parental Occupation", "Female", "Age", "Urban", "Mexic
            "Interaction: Mexico X skin color", "Interaction: Guatemala X skin color", "Interaction: Colombia X skin color", "Interaction: Ecuador X skin color", "Interaction: Bolivia X skin color", "Interaction: Peru X skin color", "Interaction: Dominican Republic X skin color")
 
 #Appendix Table
+?stargazer
 stargazer(reg1, reg2, 
-          type= "text", 
+          type= "html", 
           digits= 3,
           covariate.labels = labels,
           column.labels = c("Model 1", "Model 2"),
           no.space = TRUE,
           dep.var.caption = "",
           dep.var.labels =  "",
-          title = "Ordinary Least Squares Models Predicting Years of Schooling in Select Latin American Countries, 2010", 
-          out="Appendix_replication.txt"
-)
+          title = "Ordinary Least Squares Models Predicting Years of Schooling in Select Latin American Countries, 2010",
+          out="Appendix_replication.html")
 
 ```
 
 
 
-```{r}
+```{r message=FALSE, eval=FALSE}
 # Figure 4 
 
 #prep for graph
