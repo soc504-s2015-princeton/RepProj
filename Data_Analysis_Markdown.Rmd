@@ -31,6 +31,9 @@ Figure 2 graphically represents the relation between educational attainment and 
 
 ![](Images/Figure2_original.tiff)
 
+**Here is our replication (only a template, to be upated with recoded data):** 
+![](Images/figure2_replication.tiff)
+
 **Here is our progress so far:** 
 ```{r message=FALSE, eval=FALSE}
 #####################################################################################################################
@@ -133,32 +136,41 @@ test %>%
 
 #practice code
 #grab mean ed
-#mean_ed_graph <- clean.2010 %>%
-  #mutate(colorr=as.numeric(colorr)) %>%
-  #group_by(colorr, pais, region) %>%
-  #summarise(mean_ed = mean(ed))
+mean_ed_graph <- clean.2010 %>%
+  mutate(colorr=as.numeric(colorr)) %>%
+  group_by(colorr, pais, region) %>%
+  summarise(mean_ed = mean(ed))
 
-#figure 2 shell
-#change plot order of facet wrap
+#figure 2 template, but with wrong colorr var
+#fix legend
 mean_ed_graph$region <- factor(mean_ed_graph$region, levels = c("Central America and Mexico", "Andean", "Southern Cone and Brazil", "Caribbean"))
 levels(mean_ed_graph$region)
 
 p <- ggplot(data= mean_ed_graph, aes(x=colorr, y=mean_ed, color=pais))
 p+ layer (geom="line") +
-  facet_wrap(~region) +
-  xlab("Skin Shade") + ylab("Mean Years of Education") +
-  #ylim(5, 13) +
+  facet_wrap(~region, scales="free") +
+  xlab("Skin Shade") + 
+  ylab("Mean Years of Education") +
+ # ylim(5, 13) +
+  scale_y_continuous(limits=c(5,13), breaks=(5:13)) +
+  scale_x_continuous(breaks=(1:11), 
+      labels=c("1-lightest", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11-darkest")) +
   ggtitle("Relation between Skin Color and Educational Attainment \n\nin Latin America and the Caribbean") +
-  theme(plot.title = element_text(lineheight=.6, face="bold", size = 12),
-        strip.text.x = element_text(face = "bold", hjust= 0), 
-        strip.background = element_rect(colour="white", fill="white"), 
-        panel.background = element_rect(fill = 'white', colour = 'white'),
-        axis.text = element_text(colour = "black"), 
-        axis.title = element_text(face= "bold"),
-        panel.grid.major.y = element_line(colour="dark gray", linetype="solid"),
-        panel.grid.minor = element_blank(),
-        axis.line= element_line(colour= "dark gray")) +
-  scale_x_continuous(breaks=1:11)
+  theme(plot.title = element_text(lineheight=.6, face="bold", size = 16),
+      strip.text.x = element_text(face = "bold", hjust= 1), 
+      strip.background = element_rect(colour="white", fill="white"), 
+      panel.background = element_rect(fill = 'white', colour = 'white'),
+      axis.text.x = element_text(colour = "black", face = "bold", 
+        angle=45, hjust=1),
+      axis.text.y = element_text(colour = "black", face = "bold"), 
+      axis.title = element_text(face= "bold"),
+      panel.grid.minor = element_blank(),
+      panel.grid.major.y = element_line(colour="dark gray", linetype=1) ,
+      axis.line = element_line(colour= "dark gray"), 
+      legend.key = element_rect(fill = "white", color = "white")) +
+  guides(col= guide_legend(ncol=2))
+  
+
 
 
 
