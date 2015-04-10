@@ -54,14 +54,15 @@ Figure 2 graphically represents the relation between educational attainment and 
 #install.packages("xtable")
 library(stargazer)
 library(foreign)
-library(dplyr)
 library(ggplot2)
 library(broom)
 library(gridExtra)
 library(xtable)
+library(dplyr)
 
 setwd("~/Desktop/R working directory/RepProj")
-clean.2010<-read.dta("clean2010data.dta")
+clean.2010 <-read.dta("clean2010data.dta")
+colorr_recode_subset <- read.dta("colorr_recode_subset")
 ```
 
 
@@ -73,80 +74,21 @@ clean.2010<-read.dta("clean2010data.dta")
 #####(for example, 1’s are combined with 2’s in many countries, in which case the combined category is reported as a 2)
 ####################################################################################################################
 
+#To Do- fix legend/ colors of lines? reprint graph
 
-#Note: for Figure 2 below, we still have 1 major problem to resolve: 
-#recode the values of colorr to get the groups to collapse
-#(the plot printed here is the uncoded values)
+#calculate mean ed for figure 2
+mean_ed_graph <- colorr_recode_subset %>%
+  select(colorr_recode, pais, region, ed) %>%
+  filter(!is.na(ed)) %>%
+  group_by(colorr_recode, pais, region) %>%
+  summarize(mean_ed = mean(ed))
+View(mean_ed_graph)
 
-
-#get counts for colorr by country in temporary dataset
-unique(clean.2010$colorr)
-test<-xtabs(formula = ~colorr + pais, data=clean.2010, exclude= "97 Colud not be classified")
-test<-as.data.frame(test)
-test$colorr<- as.numeric(test$colorr)
-
-
-#the loop that crashes freqs, first for low end values of colorr, then for high end to flag categories to collapse
-for(country in unique(test$pais)){
-  minInd = min(which(test$pais == country)) - 1
-  for (colorr in 1:6) { 
-    if (test[colorr +minInd, "Freq"] <= 30) {
-      test[colorr +minInd + 1, "Freq"] <- test[colorr + minInd, "Freq"] + test[colorr + minInd + 1, "Freq"]
-      test[colorr +minInd, "Freq"] <- 0 
-    }
-  }
-}
-
-for(country in unique(test$pais)){
-  minInd = min(which(test$pais == country)) - 1
-  for (colorr in 11:6) { 
-    if (test[colorr +minInd, "Freq"] <= 30) {
-      test[colorr +minInd - 1, "Freq"] <- test[colorr + minInd, "Freq"] + test[colorr + minInd - 1, "Freq"]
-      test[colorr +minInd, "Freq"] <- 0 
-    }
-  }
-}
- 
-test 
-
-#check to make sure there are no vlaues between 1 and 29
-filter(test, Freq < 30 & Freq > 0)
-
-#Make a dataframe of what the minimum & maximum values are by country
-min_max <- test %>%
-  group_by(pais) %>%
-  filter(Freq > 0) %>%
-  select(colorr) %>%
-  summarise(min = min(colorr), max = max(colorr))
-min_max
-
-
-#now, this is what we want to create, but in a loop for all countries that calls the vectors from min_max dataframe
-test %>%
-  filter(pais=="Guatemala") %>%
-  mutate(colorr_recode= ifelse(colorr <= 3, 3, ifelse(colorr >= 8, 8, colorr)))
-
-#then use mapvaluse (plyr) to create a recoded colorr value with correct collasped categories
-#sample code:
-
-#clean.2010 $colorr_recode <- NA
-#for (country in unique(recode_df$pais)) {
-#clean.2010 $colorr_recode <- mapvalues(clean.2010$colorr, from= recode_df[ , "colorr"], to= recode_df[ ,"colorr_recode"])
-#}
-
-#practice code
-#grab mean ed
-mean_ed_graph <- clean.2010 %>%
-  mutate(colorr=as.numeric(colorr)) %>%
-  group_by(colorr, pais, region) %>%
-  summarise(mean_ed = mean(ed))
-
-#figure 2 template, but with wrong colorr var
-#fix legend
+#figure 2 
 mean_ed_graph$region <- factor(mean_ed_graph$region, levels = c("Central America and Mexico", "Andean", "Southern Cone and Brazil", "Caribbean"))
 levels(mean_ed_graph$region)
 
-p <- ggplot(data= mean_ed_graph, aes(x=colorr, y=mean_ed, color=pais))
+p <- ggplot(data= mean_ed_graph, aes(x=colorr_recode, y=mean_ed, color=pais))
 p+ layer (geom="line") +
   facet_wrap(~region, scales="free") +
   xlab("Skin Shade") + 
@@ -170,10 +112,6 @@ p+ layer (geom="line") +
       legend.key = element_rect(fill = "white", color = "white")) +
   guides(col= guide_legend(ncol=2))
   
-
-
-
-
 
 ```
 
@@ -217,12 +155,11 @@ pais_ed <- clean.2010 %>%
 # CI = mean(x) + c(-1,1) * qt(0.975, n-1) * se, where se = sd(x)/sqrt(n)
 
 
-#Note: for Figure 3 below, we still have 3 problems to resolve: 
-#1)specify the demensions in the code
-#2)get scale to extend past 10 on axis
-#3)reorder the position or countries based on difference in mean between dark and light skin
+
+#To Do- reorder the position or countries based on difference in mean between dark and light skin
       #to change plot order of facet grid, change the order of variable levels with factor()
       #ex code: levels = c("Ideal", "Very Good", "Fair", "Good", "Premium"))
+      #reprint graph
 
 #Figure 3
 fig3 <- ggplot(pais_ed, aes( x = factor(tone), y = mean_ed, fill = tone))+
@@ -289,7 +226,6 @@ The second OLS regression model reported in the Appendix includes interactions b
 
 #Note for the Appendix Table and Figure 4: We have 3 problems to resolve: 
 #1)finding how parental occupation is coded so it can be added to the model (currently excluded from anaylsis)
-#2)finding out scaling for non numerics in the regression 
 #3)how to apply weights to pais
 
 
@@ -305,6 +241,7 @@ eight_pais <- clean.2010 %>%
   mutate(Female = ifelse(q1 == "Female", 1, ifelse(q1 == "Male", 0, NA)), 
          Urban = ifelse(ur == "Urban", 1, ifelse(ur == "Rural", 0, NA)))
 
+names(clean.2010)
 #make pais a factor
 eight_pais$pais <- factor(eight_pais$pais)
 #make Brazil the reference category
@@ -313,11 +250,11 @@ eight_pais$pais <- relevel(eight_pais$pais, ref = "Brazil")
 levels(eight_pais$pais)
 
 #model 1
-?lm
+#weights? 
+
 reg1 <- lm(scale(ed)~ scale(colorr) + scale(parent_occ) + scale(Female) + scale(q2) + scale(Urban) + pais,  data=eight_pais)
 model1<- summary(reg1)
-model1_Rsquared <- model1$r.squared
-model1_fstat <- model1$fstatistic["value"]
+
 
 #check to make sure the scaling works to standardize the coefficients- do by hand, then compare using "scale"
 eight_pais$ed.std<- (eight_pais$ed - mean(eight_pais$ed, na.rm=TRUE))/ sd(eight_pais$ed, na.rm=TRUE)
@@ -327,8 +264,7 @@ test_model <- lm(ed.std ~ scale(colorr) + scale(parent_occ) + q1 + scale(q2) + u
 #model 2
 reg2<- lm(scale(ed)~ scale(colorr) + scale(parent_occ) + scale(Female)  + scale(q2) + scale(Urban) + pais + pais:scale(colorr), data=eight_pais)
 model2<- summary(reg2)
-model2_R_squared <- model2$r.squared
-model2_Fstat<- model2$fstatistic["value"]
+
 
 #prep for table
 labels = c("Skin color", "Parental Occupation", "Female", "Age", "Urban", "Mexico", "Guatemala", "Colombia", "Ecuador", "Bolivia", "Peru", "Dominican Republic",
@@ -336,16 +272,16 @@ labels = c("Skin color", "Parental Occupation", "Female", "Age", "Urban", "Mexic
 
 #Appendix Table
 ?stargazer
-stargazer(reg1, reg2, 
-          type= "html", 
+table<-stargazer(reg1, reg2, 
+          type= "text", 
           digits= 3,
           covariate.labels = labels,
           column.labels = c("Model 1", "Model 2"),
           no.space = TRUE,
           dep.var.caption = "",
           dep.var.labels =  "",
-          title = "Ordinary Least Squares Models Predicting Years of Schooling in Select Latin American Countries, 2010",
-          out="Appendix_replication.html")
+          title = "Ordinary Least Squares Models Predicting Years of Schooling in Select Latin American Countries, 2010")
+        #  ,out="Appendix_replication.html")
 
 ```
 
