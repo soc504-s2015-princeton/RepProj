@@ -181,8 +181,6 @@ fig3 <- ggplot(pais_ed, aes( x = factor(tone), y = mean_ed, fill = tone))+
         axis.text = element_text(colour = "black"), 
         axis.title = element_text(face= "bold")) 
 
- 
-
 fig3.note <- arrangeGrob(fig3, 
                          sub = textGrob("95% Confidence Interval (Design-Effect Based) \nSource: AmericasBarometer by LAPOP",
                                         x = .1, hjust = 0, vjust= 0,
@@ -238,23 +236,40 @@ clean.2010$colorr <- as.numeric(clean.2010$colorr)
 #select correct countries for analysis in new data frame, make categorical vars numeric
 eight_pais <- clean.2010 %>%
   filter(pais %in% c("Brazil", "Mexico", "Guatemala", "Colombia", "Ecuador", "Bolivia", "Peru", "Dominican Republic")) %>%
+  filter(!is.na(pais)) %>%
   mutate(Female = ifelse(q1 == "Female", 1, ifelse(q1 == "Male", 0, NA)), 
-         Urban = ifelse(ur == "Urban", 1, ifelse(ur == "Rural", 0, NA)))
+         Urban = ifelse(ur == "Urban", 1, ifelse(ur == "Rural", 0, NA)),
+         Brazil = ifelse(pais == "Brazil", 1, 0),
+         Mexico = ifelse(pais == "Mexico", 1, 0),
+         Guatemala = ifelse(pais == "Guatemala", 1, 0),
+         Colombia = ifelse(pais == "Colombia", 1, 0),
+         Ecuador = ifelse(pais == "Ecuador", 1, 0),
+         Bolivia = ifelse(pais == "Bolivia", 1, 0),
+         Peru = ifelse(pais == "Peru", 1, 0),
+         Dominican_Republic = ifelse(pais == "Dominican Republic", 1, 0))
 
 names(clean.2010)
+View(eight_pais)
 #make pais a factor
-eight_pais$pais <- factor(eight_pais$pais)
+#eight_pais$pais <- factor(eight_pais$pais)
 #make Brazil the reference category
-eight_pais$pais <- relevel(eight_pais$pais, ref = "Brazil")
+#eight_pais$pais <- relevel(eight_pais$pais, ref = "Brazil")
 #check
-levels(eight_pais$pais)
+#levels(eight_pais$pais)
 
 #model 1
 #weights? 
+names(clean.2010)
+clean.2010$weight1500
 
-reg1 <- lm(scale(ed)~ scale(colorr) + scale(parent_occ) + scale(Female) + scale(q2) + scale(Urban) + pais,  data=eight_pais)
+class(eight_pais$Female)
+
+reg1 <- lm(scale(ed)~ scale(colorr) + scale(parent_occ) + scale(Female) + scale(q2) + scale(Urban) + scale(Mexico) + scale(Guatemala) + scale(Colombia) + scale(Ecuador) + scale(Bolivia) + scale(Peru) + scale(Dominican_Republic), data=eight_pais)
+
+
 model1<- summary(reg1)
 
+#survey....
 
 #check to make sure the scaling works to standardize the coefficients- do by hand, then compare using "scale"
 eight_pais$ed.std<- (eight_pais$ed - mean(eight_pais$ed, na.rm=TRUE))/ sd(eight_pais$ed, na.rm=TRUE)
