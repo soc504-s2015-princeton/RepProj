@@ -38,7 +38,8 @@ Figure 2 graphically represents the relation between educational attainment and 
 #####   Due Date:   3/15/2015                                                                                   #####
 #####   Authors:    Megan Blanchard and Kalyani Jayasankar                                                      #####
 #####   Input:      clean2010data.dta,and Images in Images folder of project                                    #####
-#####   Output:     This code does anaylsis on the clean data file. We create 3 figures :                       #####
+#####   Output:     This code does anaylsis on the clean data file. We create 4 figures :                       #####
+#####               Figure 2: Relation between Skin Color and Educational Attainment                            #####
 #####               Figure 3: Bar Graph of Average Ed by Skin Color for each country                            #####
 #####               Appendix: OLS Models Predicting Years of Schooling in Latin American Countries, 2010        #####
 #####               Figure 4: Effects of Skin Color and Other Factors on Educational Attainment                 #####
@@ -78,7 +79,8 @@ mean_ed_graph <- colorr_recode_subset %>%
   select(colorr_recode, pais, region, ed, weight1500) %>%
   filter(!is.na(ed)) %>%
   group_by(colorr_recode, pais, region) %>%
-  summarize(mean_ed = weighted.mean(ed, weight1500))
+  summarize(mean_ed = weighted.mean(ed, weight1500)) 
+  
 
 mean_ed_graph$region <- factor(mean_ed_graph$region, 
                         levels = c("Central America and Mexico", 
@@ -86,6 +88,8 @@ mean_ed_graph$region <- factor(mean_ed_graph$region,
                                    "Southern Cone and Brazil", 
                                    "Caribbean"))
 
+mean_ed_graph[!complete.cases(mean_ed_graph),]
+View(mean_ed_graph)
 #figure 2
 p <- ggplot(data= mean_ed_graph, aes(x=colorr_recode, y=mean_ed, color=pais))
 fig2 <- p + layer (geom="line") +
@@ -93,7 +97,7 @@ fig2 <- p + layer (geom="line") +
   xlab("Skin Shade") + 
   ylab("Mean Years of Education") +
   scale_y_continuous(limits=c(5,13), breaks=(5:13)) +
-  scale_x_continuous(breaks=(1:11), 
+  scale_x_continuous(limits=c(1,11), breaks=(1:11), 
       labels=c("1-lightest", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11-darkest")) +
   ggtitle("Relation between Skin Color and Educational Attainment 
           \n\nin Latin America and the Caribbean") +

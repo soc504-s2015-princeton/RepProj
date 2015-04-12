@@ -29,7 +29,7 @@ names(merged.2010)
       
 #subset to 23 countires for analysis- exclude Canada, US, and Haiti
 clean.2010 <- merged.2010 %>%
-    filter(!pais=="Haiti", !pais=="Canada", !pais=="United States") %>%  
+    filter(!pais == "Haiti", !pais == "Canada", !pais == "United States") %>%  
     select(year, pais, idnum, weight1500, ur, q1, ed, colorr, ocup1anc, q2, weight1500) 
       
 #redefine factor
@@ -96,9 +96,6 @@ for(country in unique(test$pais)){
   }
 }
 
-#check to make sure there are no vlaues between 1 and 29
-filter(test, Freq < 30 & Freq > 0)
-
 #Make a dataframe of what the minimum & maximum values are by country
 min_max <- test %>%
   group_by(pais) %>%
@@ -124,5 +121,26 @@ colorr_recode_subset <- ldply(cty.vec, function(x){
     mutate(tone = ifelse(colorr_recode == 1 | colorr_recode == 2 | colorr_recode == 3, "light", 
                   ifelse(colorr_recode == 4 | colorr_recode == 5, "medium", "dark")))
 } )
+
+#recode Honduras and Nicaragua
+xtabs(formula = ~colorr_recode + pais , data=colorr_recode_subset)
+
+colorr_recode_subset$colorr_recode <- ifelse(colorr_recode_subset$pais == "Honduras" & 
+                                      colorr_recode_subset$colorr_recode == 10, 9, 
+                                      colorr_recode_subset$colorr_recode)
+
+colorr_recode_subset$colorr_recode <- ifelse(colorr_recode_subset$pais == "Nicaragua" & 
+                                             colorr_recode_subset$colorr_recode == 9, 8, 
+                                             colorr_recode_subset$colorr_recode)
+
+xtabs(formula = ~colorr_recode + pais , data=colorr_recode_subset)
+
+unique(colorr_recode_subset$pais)
+unique(colorr_recode_subset$region)
+unique(colorr_recode_subset$colorr)
+unique(colorr_recode_subset$parent_occ)
+unique(colorr_recode_subset$tone)
+unique(colorr_recode_subset$colorr_recode)
+
 
 write.dta(colorr_recode_subset, "colorr_recode_subset")
