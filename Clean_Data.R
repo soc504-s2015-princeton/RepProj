@@ -21,16 +21,13 @@ library(broom)
 setwd("~/Desktop/R working directory/RepProj")
 
 #read in orginal data
-merged.2010 <- read.dta("1626360926english_merge_2010_americasbarometer_v14v3.dta", convert.factors=TRUE, missing.type = TRUE, convert.underscore = TRUE, warn.missing.labels = TRUE) 
-names(merged.2010)
+merged.2010 <- read.dta("1626360926english_merge_2010_americasbarometer_v14v3.dta", convert.factors = TRUE, missing.type = TRUE, convert.underscore = TRUE, warn.missing.labels = TRUE) 
 
 #create cleaned data file
-#subset: exclude Haiti, US, Canada, filter for vars of interest
-      
 #subset to 23 countires for analysis- exclude Canada, US, and Haiti
 clean.2010 <- merged.2010 %>%
     filter(!pais == "Haiti", !pais == "Canada", !pais == "United States") %>%  
-    select(year, pais, idnum, weight1500, ur, q1, ed, colorr, ocup1anc, q2, weight1500) 
+    select(year, pais, idnum, weight1500, estratopri, upm, ur, q1, ed, colorr, ocup1anc, q2, weight1500) 
       
 #redefine factor
 clean.2010$pais <- factor(clean.2010$pais)
@@ -62,15 +59,11 @@ clean.2010 <- clean.2010 %>%
 clean.2010$parent_occ <- factor(clean.2010$parent_occ)
 
 #check for 39,238 respondents in 23 of the 26 countries, as stated in paper
-unique(clean.2010$pais)
-unique(clean.2010$region)
-unique(clean.2010$colorr)
-unique(clean.2010$parent_occ)
 write.dta(clean.2010, "clean2010data.dta")
 
 #output a dataset for graphs
 #get counts for colorr by country in temporary dataset
-test <- xtabs(formula = ~colorr + pais , data=clean.2010, exclude= "97 Colud not be classified")
+test <- xtabs(formula = ~colorr + pais , data = clean.2010, exclude = "97 Colud not be classified")
 test <- as.data.frame(test)
 test$colorr <- as.numeric(test$colorr)
 
@@ -89,9 +82,9 @@ for(country in unique(test$pais)){
 for(country in unique(test$pais)){
   minInd = min(which(test$pais == country)) - 1
   for (colorr in 11:6) { 
-    if (test[colorr +minInd, "Freq"] <= 30) {
-      test[colorr +minInd - 1, "Freq"] <- test[colorr + minInd, "Freq"] + test[colorr + minInd - 1, "Freq"]
-      test[colorr +minInd, "Freq"] <- 0 
+    if (test[colorr + minInd, "Freq"] <= 30) {
+        test[colorr + minInd - 1, "Freq"] <- test[colorr + minInd, "Freq"] + test[colorr + minInd - 1, "Freq"]
+        test[colorr + minInd, "Freq"] <- 0 
     }
   }
 }
@@ -108,14 +101,14 @@ cty.vec <- as.character(unique(test$pais))
 
 colorr_recode_subset <- clean.2010 %>%
   filter(!is.na(colorr)) %>%
-  select(colorr, pais, region, ed, weight1500, parent_occ, q1, q2, ur) %>%
+  select(colorr, pais, region, ed, weight1500, parent_occ, q1, q2, ur, estratopri, upm) %>%
   mutate(colorr = as.numeric(colorr)) %>%
   arrange(pais, colorr) 
 
 library(plyr)
 colorr_recode_subset <- ldply(cty.vec, function(x){
   out <- colorr_recode_subset %>%
-    filter(pais== x) %>%
+    filter(pais == x) %>%
     mutate(colorr_recode = ifelse(colorr <= filter(min_max, pais == x)$min, filter(min_max, pais == x)$min, 
                            ifelse(colorr >= filter(min_max, pais == x)$max, filter(min_max, pais == x)$max, colorr))) %>%
     mutate(tone = ifelse(colorr_recode == 1 | colorr_recode == 2 | colorr_recode == 3, "light", 
@@ -123,24 +116,12 @@ colorr_recode_subset <- ldply(cty.vec, function(x){
 } )
 
 #recode Honduras and Nicaragua
-xtabs(formula = ~colorr_recode + pais , data=colorr_recode_subset)
-
 colorr_recode_subset$colorr_recode <- ifelse(colorr_recode_subset$pais == "Honduras" & 
-                                      colorr_recode_subset$colorr_recode == 10, 9, 
-                                      colorr_recode_subset$colorr_recode)
+                                             colorr_recode_subset$colorr_recode == 10, 9, 
+                                             colorr_recode_subset$colorr_recode)
 
 colorr_recode_subset$colorr_recode <- ifelse(colorr_recode_subset$pais == "Nicaragua" & 
                                              colorr_recode_subset$colorr_recode == 9, 8, 
                                              colorr_recode_subset$colorr_recode)
 
-xtabs(formula = ~colorr_recode + pais , data=colorr_recode_subset)
-
-unique(colorr_recode_subset$pais)
-unique(colorr_recode_subset$region)
-unique(colorr_recode_subset$colorr)
-unique(colorr_recode_subset$parent_occ)
-unique(colorr_recode_subset$tone)
-unique(colorr_recode_subset$colorr_recode)
-
-
-write.dta(colorr_recode_subset, "colorr_recode_subset")
+write.dta(colorr_recode_subset, "colorr_recode_subset.dta")

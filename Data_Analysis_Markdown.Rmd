@@ -10,6 +10,8 @@ output: html_document
 Pigmentocracy in the Americas: How is Educational Attainment Related to Skin Color?
 By Edward Telles and Liza Steele
 
+Paper can be found at: http://www.vanderbilt.edu/lapop/insights/IO873en.pdf
+
 **Paper Overview:**
 
 This Insights report addresses the question of whether educational attainment, a key indicator of socioeconomic status, is related to skin color in Latin America and the Caribbean. Based on data from the 2010 AmericasBarometer, our analysis shows that persons with lighter skin color tend to have higher levels of schooling than those with dark skin color throughout the region, with few exceptions (2012:i)
@@ -43,13 +45,13 @@ Figure 2 graphically represents the relation between educational attainment and 
 #####               Figure 3: Bar Graph of Average Ed by Skin Color for each country                            #####
 #####               Appendix: OLS Models Predicting Years of Schooling in Latin American Countries, 2010        #####
 #####               Figure 4: Effects of Skin Color and Other Factors on Educational Attainment                 #####
-#####   Notes:                                                                                                  #####
-#####                                                                                                           #####
 #####################################################################################################################
 
 #install.packages("stargazer")
 #install.packages("gridExtra")
 #install.packages("xtable")
+#install.packages("survey")
+library(survey)
 library(stargazer)
 library(foreign)
 library(ggplot2)
@@ -60,7 +62,7 @@ library(dplyr)
 
 setwd("~/Desktop/R working directory/RepProj")
 clean.2010 <-read.dta("clean2010data.dta")
-colorr_recode_subset <- read.dta("colorr_recode_subset")
+colorr_recode_subset <- read.dta("colorr_recode_subset.dta")
 ```
 
 
@@ -81,39 +83,56 @@ mean_ed_graph <- colorr_recode_subset %>%
   group_by(colorr_recode, pais, region) %>%
   summarize(mean_ed = weighted.mean(ed, weight1500)) 
   
-
+#oder regions for figure
 mean_ed_graph$region <- factor(mean_ed_graph$region, 
                         levels = c("Central America and Mexico", 
                                    "Andean", 
                                    "Southern Cone and Brazil", 
                                    "Caribbean"))
+#order countries 
+mean_ed_graph$pais <- factor(mean_ed_graph$pais,
+                  levels = c("Panama", "Costa Rica", "Honduras",  "Mexico", "Guatemala", "El Salvador", "Nicaragua", 
+                           "Bolivia", "Peru", "Venezuela", "Colombia", "Ecuador",
+                           "Argentina", "Chile", "Paraguay", "Uruguay",  "Brazil", 
+                           "Suriname", "Jamaica", "Trinidad & Tobago",  "Guyana", "Dominican Republic", "Belize"))
 
-mean_ed_graph[!complete.cases(mean_ed_graph),]
-View(mean_ed_graph)
 #figure 2
-p <- ggplot(data= mean_ed_graph, aes(x=colorr_recode, y=mean_ed, color=pais))
-fig2 <- p + layer (geom="line") +
-  facet_wrap(~region, scales="free") +
+p <- ggplot(data = mean_ed_graph, aes(x = colorr_recode, y = mean_ed, color = pais))
+fig2 <- p + layer (geom="line", size = 1) +
+  facet_wrap(~region, scales = "free") +
+  scale_color_manual("Countries\n",
+                     labels = c("CENTRAL AMERICA & MEXICO\nPanama", 
+                                "Costa Rica", "Honduras",  "Mexico", "Guatemala", "El Salvador", "Nicaragua", 
+                                "ANDEAN\nBolivia", 
+                                "Peru", "Venezuela", "Colombia", "Ecuador",
+                                "SOUTHERN CONE & BRAZIL\nArgentina", 
+                                "Chile", "Paraguay", "Uruguay",  "Brazil", 
+                                "CARIBBEAN\nSuriname", 
+                                "Jamaica", "Trinidad & Tobago",  "Guyana", "Dominican Republic", "Belize"),
+                     values = c("dark red", "orange", "gold", "dark blue", "sky blue", "dark green", "light green",
+                                "dark red", "sky blue", "dark green", "orange", "gold",
+                                "dark red", "sky blue", "dark green", "orange", "gold", 
+                                "orange", "dark blue", "gold", "dark green", "dark red", "sky blue"))+
   xlab("Skin Shade") + 
   ylab("Mean Years of Education") +
-  scale_y_continuous(limits=c(5,13), breaks=(5:13)) +
-  scale_x_continuous(limits=c(1,11), breaks=(1:11), 
-      labels=c("1-lightest", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11-darkest")) +
+  scale_y_continuous(limits = c(5,13), breaks = (5:13)) +
+  scale_x_continuous(limits = c(1,11), breaks = (1:11), 
+      labels = c("1-lightest", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11-darkest")) +
   ggtitle("Relation between Skin Color and Educational Attainment 
           \n\nin Latin America and the Caribbean") +
-  theme(plot.title = element_text(lineheight=.6, face="bold", size = 16),
-      strip.text.x = element_text(face = "bold", hjust= 1), 
-      strip.background = element_rect(colour="white", fill="white"), 
+  theme(plot.title = element_text(lineheight =.6, face = "bold", size = 16),
+      strip.text.x = element_text(face = "bold", hjust = 1), 
+      strip.background = element_rect(colour = "white", fill = "white"), 
       panel.background = element_rect(fill = 'white', colour = 'white'),
       axis.text.x = element_text(colour = "black", face = "bold", 
-        angle=45, hjust=1),
+        angle = 45, hjust = 1),
       axis.text.y = element_text(colour = "black", face = "bold"), 
-      axis.title = element_text(face= "bold"),
+      axis.title = element_text(face = "bold"),
       panel.grid.minor = element_blank(),
-      panel.grid.major.y = element_line(colour="dark gray", linetype=1) ,
-      axis.line = element_line(colour= "dark gray"), 
+      panel.grid.major.y = element_line(colour = "dark gray", linetype = 1) ,
+      axis.line = element_line(colour = "dark gray"), 
       legend.key = element_rect(fill = "white", color = "white")) +
-  guides(col= guide_legend(ncol=2))
+  guides(col = guide_legend(ncol = 2))
 fig2
 
 ```
@@ -140,12 +159,12 @@ pais_ed <- colorr_recode_subset %>%
   filter(!is.na(colorr_recode), !is.na(ed), tone != "medium") %>%
   group_by(pais, tone) %>%
   select(pais, tone, ed, weight1500) %>%
-  mutate(se= sd(ed)/sqrt(length(ed)), 
-         ed_n= length(ed), 
+  mutate(se = sd(ed)/sqrt(length(ed)), 
+         ed_n = length(ed), 
          ci.lower = (mean(ed) - 1 * qt(.975, (ed_n - 1)) * se), 
          ci.upper = (mean(ed) + 1 * qt(.975, (ed_n - 1)) * se)) %>%
   group_by(pais, tone, ci.lower, ci.upper) %>%
-  summarise(mean_ed= weighted.mean(ed, weight1500))
+  summarise(mean_ed = weighted.mean(ed, weight1500))
 
 #Note for reference- formulas for finding the CI:
 # CI = mean(x) + c(-1,1) * qt(0.975, n-1) * se, where se = sd(x)/sqrt(n)
@@ -162,38 +181,33 @@ pais_ed$pais <- factor(pais_ed$pais,
 fig3 <- ggplot(pais_ed, aes( x = factor(tone), y = mean_ed, fill = tone))+
   ylim(0, 14) +
   ylab("Years of Schooling") + xlab("") +
-  geom_bar(stat="identity") + 
+  geom_bar(stat ="identity") + 
   geom_errorbar(aes(ymin = ci.lower, ymax = ci.upper)) + 
   facet_wrap(~ pais, ncol = 2) + coord_flip() +
-  geom_text(aes(label = round(mean_ed, 1)), size=3.5, hjust=-.7) +
+  geom_text(aes(label = round(mean_ed, 1)), size = 3.5, hjust = -.7) +
   scale_fill_brewer(palette = "Greens") +
   theme(legend.position = "none") +
   scale_x_discrete(labels = c("Dark Skin", "Light Skin")) +
   ggtitle("Average Eduacational Attainment for Persons with \n \nDarkest and Lightest Skin Colors in the Americas, 2010") +
-  theme(plot.title = element_text(lineheight=.6, face="bold", size = 12),
-        strip.text.x = element_text(face = "bold", hjust= 0), 
-        strip.background = element_rect(colour="white", fill="white"), 
+  theme(plot.title = element_text(lineheight =.6, face = "bold", size = 12),
+        strip.text.x = element_text(face = "bold", hjust = 0), 
+        strip.background = element_rect(colour ="white", fill ="white"), 
         panel.background = element_rect(fill = 'white', colour = 'white'),
         axis.text = element_text(colour = "black"), 
-        axis.title = element_text(face= "bold")) 
+        axis.title = element_text(face = "bold")) 
 
 fig3.note <- arrangeGrob(fig3, 
-                         sub = textGrob("95% Confidence Interval (Design-Effect Based) \nSource: AmericasBarometer by LAPOP",
-                                        x = .1, hjust = 0, vjust= 0,
+                         sub = textGrob("95% Confidence Interval (Design-Effect Based) 
+                                        \nSource: AmericasBarometer by LAPOP",
+                                        x = .1, hjust = 0, vjust = 0,
                                         gp = gpar(fontface = "italic", fontsize = 10)))
 fig3.note
 
 ````
 
-**Here is the set up for the Appendix and Figure 4 by Telles and Steele:**
+**Here is the set up for Figure 4 by Telles and Steele:**
 
-Since other factors besides color may affect years of schooling, we run a regression analysis predicting years of education by skin color, as well as class origin, age, sex, urban/rural residence and country of residence. We run the regression model only for the eight countries (Bolivia, Brazil, Colombia, Dominican Republic, Ecuador, Guatemala, Mexico and Peru) in which the class origin data are available[…] The results of the OLS regression analysis are shown in the first column of the Appendix and are summarized graphically in Figure 4. In order to compare the relative sizes of the effects, the figure presents standardised coefficients (2012:5)
-
-The second OLS regression model reported in the Appendix includes interactions between skin color and an indicator variable for each country, using Brazil as the country of reference (2012:6). 
-
-**Here is the Appendix Table from the paper:**
-
-![](Images/Appendix_original.tiff)
+Since other factors besides color may affect years of schooling, we run a regression analysis predicting years of education by skin color, as well as class origin, age, sex, urban/rural residence and country of residence. We run the regression model only for the eight countries (Bolivia, Brazil, Colombia, Dominican Republic, Ecuador, Guatemala, Mexico and Peru) in which the class origin data are available[…] The results of the OLS regression analysis are are summarized graphically in Figure 4. In order to compare the relative sizes of the effects, the figure presents standardised coefficients (2012:5)
 
 **Here is the Figure 4 from the paper:**
 
@@ -203,15 +217,18 @@ The second OLS regression model reported in the Appendix includes interactions b
 
 ```{r message=FALSE, eval=FALSE}
 ####################################################################################################################
-#####Creating Appendix Table: OLS Models Predicting Years of Schooling in Select Latin American Countries, 2010 
 #####And Figure 4. Effects of Skin Color and Other Factors on Educational Attainment 
 ####################################################################################################################
+
 #prep, select correct countries for analysis in new data frame, make categorical vars numeric
-eight_pais <- clean.2010 %>%
-  filter(pais %in% c("Brazil", "Mexico", "Guatemala", "Colombia", "Ecuador", "Bolivia", "Peru", "Dominican Republic")) %>%
-  filter(!is.na(pais), colorr != "97 Colud not be classified") %>%
-  mutate(colorr= as.numeric(colorr),
-         ed= as.numeric(ed),
+eight_pais <- colorr_recode_subset %>%
+  filter(pais %in% c("Brazil", "Mexico", "Guatemala", "Colombia", 
+                     "Ecuador", "Bolivia", "Peru", "Dominican Republic")) %>%
+   filter(!is.na(pais), !is.na(ed), !is.na(q2), !is.na(q1), 
+          !is.na(parent_occ), !is.na(ur), !is.na(colorr)) %>%
+   mutate(ed = as.numeric(ed),
+         parent_occ = as.numeric(parent_occ),
+         age = as.numeric(q2), 
          Female = ifelse(q1 == "Female", 1, ifelse(q1 == "Male", 0, NA)), 
          Urban = ifelse(ur == "Urban", 1, ifelse(ur == "Rural", 0, NA)),
          Brazil = ifelse(pais == "Brazil", 1, 0),
@@ -223,77 +240,12 @@ eight_pais <- clean.2010 %>%
          Peru = ifelse(pais == "Peru", 1, 0),
          Dominican_Republic = ifelse(pais == "Dominican Republic", 1, 0))
 
-#model 1
-reg1 <- lm(scale(ed) ~ scale(colorr) +
-                      scale(parent_occ) +
-                      scale(Female) +
-                      scale(q2) +
-                      scale(Urban) +
-                      scale(Mexico) + 
-                      scale(Guatemala) + 
-                      scale(Colombia) + 
-                      scale(Ecuador) + 
-                      scale(Bolivia) + 
-                      scale(Peru) + 
-                      scale(Dominican_Republic), data=eight_pais, weights= weight1500)
-
-model1<- summary(reg1)
-
-#model 2
-reg2<- lm(scale(ed)~ scale(colorr) + 
-                     scale(parent_occ) + 
-                     scale(Female)  + 
-                     scale(q2) + 
-                     scale(Urban) + 
-                     scale(Mexico) + 
-                     scale(Guatemala) + 
-                     scale(Colombia) + 
-                     scale(Ecuador) + 
-                     scale(Bolivia) + 
-                     scale(Peru) + 
-                     scale(Dominican_Republic) +
-                     scale(Mexico):scale(colorr) + 
-                     scale(Guatemala):scale(colorr) + 
-                     scale(Colombia):scale(colorr) + 
-                     scale(Ecuador):scale(colorr) + 
-                     scale(Bolivia):scale(colorr) + 
-                     scale(Peru):scale(colorr) + 
-                     scale(Dominican_Republic):scale(colorr), 
-                     data=eight_pais, weights=weight1500)
-
-model2<- summary(reg2)
-
-#prep for table
-labels = c("Skin color", "Parental Occupation", "Female", "Age", "Urban", 
-           "Mexico", "Guatemala", "Colombia", "Ecuador", "Bolivia", "Peru", "Dominican Republic",
-           "Interaction: Mexico X skin color", "Interaction: Guatemala X skin color", 
-           "Interaction: Colombia X skin color", "Interaction: Ecuador X skin color", 
-           "Interaction: Bolivia X skin color", "Interaction: Peru X skin color", 
-           "Interaction: Dominican Republic X skin color")
-
-#Appendix Table
-table<-stargazer(reg1, reg2, 
-          type= "text", 
-          covariate.labels = labels,
-          digits= 3,
-          column.labels = c("Model 1", "Model 2"),
-          no.space = TRUE,
-          dep.var.caption = "",
-          dep.var.labels =  "",
-          title = "Ordinary Least Squares Models Predicting Years of 
-                   Schooling in Select Latin American Countries, 2010")
-
-
-```
-
-
-
-```{r message=FALSE, eval=FALSE}
-# Figure 4 
-
+#Figure 4 
 #prep for graph
-#rerunning regreesion for correct order in graph
-model1.graph <- lm(scale(ed) ~ scale(colorr) + 
+
+#model 1
+svy<- svydesign(ids=~upm, strata=~ estratopri, data=eight_pais, weights=~weight1500, nest=TRUE)
+model1.graph <- svyglm(scale(ed) ~ scale(colorr) + 
                                scale(parent_occ) + 
                                scale(Urban) + 
                                scale(q2) + 
@@ -304,10 +256,8 @@ model1.graph <- lm(scale(ed) ~ scale(colorr) +
                                scale(Ecuador) + 
                                scale(Bolivia) + 
                                scale(Peru) + 
-                               scale(Dominican_Republic), data=eight_pais, weights= weight1500)
+                               scale(Dominican_Republic), svy)
                               
-model1.graph$coefficients
-
 #creating data frame of coefficients and CI's
 graph.coef <- summary(model1.graph)$coefficients[2:6, 1]
 model1.CI <- confint(model1.graph)
@@ -315,7 +265,6 @@ model1.CIlower <- model1.CI[2:6 , 1]
 model1.CIupper <- model1.CI[2:6 , 2]
 
 labels = c("Skin Color","Parental Occupation", "Urban", "Age", "Female")
-
 
 frame <- data.frame(variable = labels,
                     coefficient = graph.coef,
@@ -329,23 +278,20 @@ frame$variable.order <- factor(frame$variable, levels = c("Female", "Age", "Urba
 #Create Figure 4
 fig4<- ggplot(frame, aes(y = coefficient, x = variable.order)) + geom_point() +
   geom_pointrange(aes(ymin = ci.lower,  ymax = ci.upper)) +
-  geom_hline(yintercept = 0, color="dark green", size= 1) +
+  geom_hline(yintercept = 0, color ="dark green", size = 1) +
   coord_flip() +
   ylab("95 Percent C.I. (Design -Effects Based)") + xlab("") +
   theme_classic() +
-  geom_text(aes(x=5, y=.2, label= "R-Squared:0.325 \nF=577.823 \nN=14,399 "), size= 4.5) +
   ggtitle("Effects of Skin Color and Other Factors on\n\n Educational Attainment in Select Latin American \n\nCountries") +
-  theme(plot.title = element_text(lineheight=.6, face="bold", size = 12),
-        axis.text = element_text(colour = "black", face= "bold"), 
-        axis.title = element_text(face= "bold"))
-
-
+  theme(plot.title = element_text(lineheight =.6, face ="bold", size = 12),
+        axis.text = element_text(colour = "black", face = "bold"), 
+        axis.title = element_text(face = "bold"))
 
 fig4.note <- arrangeGrob(fig4, 
                          sub = textGrob("Source: Americas Barometer by LAPOP",
-                                        x = .1, hjust = 0, vjust= 0,
+                                        x = .1, hjust = 0, vjust = 0,
                                         gp = gpar(fontface = "italic", fontsize = 10)))
-
+fig4.note
 
 
 ```
