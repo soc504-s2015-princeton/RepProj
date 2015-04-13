@@ -34,7 +34,11 @@ Figure 2 graphically represents the relation between educational attainment and 
 
 **Here is our replication:** 
 
-```{r message=FALSE, eval=FALSE}
+![](Images/Figure2_rep.tiff)
+
+**Here is our code:** 
+
+```{r message=FALSE}
 #####################################################################################################################
 #####   Assignment: Replication Project (Part 1)                                                                #####
 #####   Due Date:   3/15/2015                                                                                   #####
@@ -46,35 +50,25 @@ Figure 2 graphically represents the relation between educational attainment and 
 #####               Appendix: OLS Models Predicting Years of Schooling in Latin American Countries, 2010        #####
 #####               Figure 4: Effects of Skin Color and Other Factors on Educational Attainment                 #####
 #####################################################################################################################
-
-#install.packages("stargazer")
-#install.packages("gridExtra")
-#install.packages("xtable")
-#install.packages("survey")
 library(survey)
-library(stargazer)
 library(foreign)
 library(ggplot2)
-library(broom)
 library(gridExtra)
 library(xtable)
 library(dplyr)
 
-setwd("~/Desktop/R working directory/RepProj")
 clean.2010 <-read.dta("clean2010data.dta")
 colorr_recode_subset <- read.dta("colorr_recode_subset.dta")
 ```
 
 
-```{r message=FALSE, eval=FALSE}
+```{r message=FALSE}
 ####################################################################################################################
 #####Creating Figure 2: Relation between Skin Color and Educational Attainment in Latin America and the Caribbean
 #####facet by the four specified regions, 
 #####Note: Categories with fewer than 30 respondents are combined with continuous groups 
 #####(for example, 1’s are combined with 2’s in many countries, in which case the combined category is reported as a 2)
 ####################################################################################################################
-
-#To Do- fix legend/ colors of lines? reprint graph
 
 #figure 2 prep, calculate mean ed for figure 2
 mean_ed_graph <- colorr_recode_subset %>%
@@ -100,7 +94,7 @@ mean_ed_graph$pais <- factor(mean_ed_graph$pais,
 p <- ggplot(data = mean_ed_graph, aes(x = colorr_recode, y = mean_ed, color = pais))
 fig2 <- p + layer (geom="line", size = 1) +
   facet_wrap(~region, scales = "free") +
-  scale_color_manual("Countries\n",
+  scale_color_manual("Countries, by Region\n",
                      labels = c("CENTRAL AMERICA & MEXICO\nPanama", 
                                 "Costa Rica", "Honduras",  "Mexico", "Guatemala", "El Salvador", "Nicaragua", 
                                 "ANDEAN\nBolivia", 
@@ -133,7 +127,6 @@ fig2 <- p + layer (geom="line", size = 1) +
       axis.line = element_line(colour = "dark gray"), 
       legend.key = element_rect(fill = "white", color = "white")) +
   guides(col = guide_legend(ncol = 2))
-fig2
 
 ```
 
@@ -147,7 +140,11 @@ Figure 3 shows the mean levels of schooling for the residents with the lightest 
 
 **Here is our replication:**
 
-```{r message=FALSE, eval=FALSE}
+![](Images/Figure3_rep.tiff)
+
+**Here is our code:**
+
+```{r message=FALSE}
 ####################################################################################################################
 #####shows the mean levels of schooling for the residents with the lightest skin (1-3) 
 #####compared to those with darkest skin (6+) in all 23 countries, 
@@ -161,13 +158,10 @@ pais_ed <- colorr_recode_subset %>%
   select(pais, tone, ed, weight1500) %>%
   mutate(se = sd(ed)/sqrt(length(ed)), 
          ed_n = length(ed), 
-         ci.lower = (mean(ed) - 1 * qt(.975, (ed_n - 1)) * se), 
-         ci.upper = (mean(ed) + 1 * qt(.975, (ed_n - 1)) * se)) %>%
+         ci.lower = (weighted.mean(ed, weight1500) - 1 * qt(.975, (ed_n - 1)) * se), 
+         ci.upper = (weighted.mean(ed, weight1500) + 1 * qt(.975, (ed_n - 1)) * se)) %>%
   group_by(pais, tone, ci.lower, ci.upper) %>%
   summarise(mean_ed = weighted.mean(ed, weight1500))
-
-#Note for reference- formulas for finding the CI:
-# CI = mean(x) + c(-1,1) * qt(0.975, n-1) * se, where se = sd(x)/sqrt(n)
 
 #fig 3 prep, order countries 
 pais_ed$pais <- factor(pais_ed$pais,
@@ -199,9 +193,8 @@ fig3 <- ggplot(pais_ed, aes( x = factor(tone), y = mean_ed, fill = tone))+
 fig3.note <- arrangeGrob(fig3, 
                          sub = textGrob("95% Confidence Interval (Design-Effect Based) 
                                         \nSource: AmericasBarometer by LAPOP",
-                                        x = .1, hjust = 0, vjust = 0,
+                                        x = .1, hjust = 0, vjust = .5,
                                         gp = gpar(fontface = "italic", fontsize = 10)))
-fig3.note
 
 ````
 
@@ -215,7 +208,11 @@ Since other factors besides color may affect years of schooling, we run a regres
 
 **Here is our replication:** 
 
-```{r message=FALSE, eval=FALSE}
+![](Images/Figure4_rep.tiff)
+
+**Here is our code:** 
+
+```{r message=FALSE}
 ####################################################################################################################
 #####And Figure 4. Effects of Skin Color and Other Factors on Educational Attainment 
 ####################################################################################################################
@@ -239,9 +236,6 @@ eight_pais <- colorr_recode_subset %>%
          Bolivia = ifelse(pais == "Bolivia", 1, 0),
          Peru = ifelse(pais == "Peru", 1, 0),
          Dominican_Republic = ifelse(pais == "Dominican Republic", 1, 0))
-
-#Figure 4 
-#prep for graph
 
 #model 1
 svy<- svydesign(ids=~upm, strata=~ estratopri, data=eight_pais, weights=~weight1500, nest=TRUE)
@@ -291,8 +285,6 @@ fig4.note <- arrangeGrob(fig4,
                          sub = textGrob("Source: Americas Barometer by LAPOP",
                                         x = .1, hjust = 0, vjust = 0,
                                         gp = gpar(fontface = "italic", fontsize = 10)))
-fig4.note
-
 
 ```
 
