@@ -1,3 +1,6 @@
+---
+output: html_document
+---
 --- 
 title: "RepProj_Megan_Kalyani"
 author: "Megan and Kalyani"
@@ -10,15 +13,13 @@ output: html_document
 Pigmentocracy in the Americas: How is Educational Attainment Related to Skin Color?
 By Edward Telles and Liza Steele
 
-Paper can be found at: http://www.vanderbilt.edu/lapop/insights/IO873en.pdf
+**Abstract:**
 
-**Paper Overview:**
-
-This Insights report addresses the question of whether educational attainment, a key indicator of socioeconomic status, is related to skin color in Latin America and the Caribbean. Based on data from the 2010 AmericasBarometer, our analysis shows that persons with lighter skin color tend to have higher levels of schooling than those with dark skin color throughout the region, with few exceptions (2012:i)
+This paper addresses the question of whether educational attainment, a key indicator of socioeconomic status, is related to skin color in Latin America and the Caribbean. Based on data from the 2010 AmericasBarometer, our analysis shows that persons with lighter skin color tend to have higher levels of schooling than those with dark skin color throughout the region, with few exceptions. Moreover, these differences are statistically significant in most cases and, as we show in a test of several multiracial countries, the negative relation between skin color and educational attainment occurs independently of class origin and other variables known to affect socioeconomic status. Thus, we find that skin color, a central measure of race, is an important source of social stratification throughout the Americas today. (2012:i)
 
 **Figure 1 in the paper is an image to aid with the understanding of a variable(colorr):**
 
-![](Images/Figure1_original(do_not_rep).tiff)
+![](Images/Figure1_original(do_not_rep).png)
 
 (There is nothing to replicate)
 
@@ -30,11 +31,11 @@ Figure 2 graphically represents the relation between educational attainment and 
 
 **Here is the figure from the paper:**
 
-![](Images/Figure2_original.tiff)
+![](Images/Figure2_original.png)
 
 **Here is our replication:** 
 
-![](Images/Figure2_rep.tiff)
+![](Images/Figure2_rep.png)
 
 **Here is our code:** 
 
@@ -43,7 +44,7 @@ Figure 2 graphically represents the relation between educational attainment and 
 #####   Assignment: Replication Project (Part 1)                                                                #####
 #####   Due Date:   3/15/2015                                                                                   #####
 #####   Authors:    Megan Blanchard and Kalyani Jayasankar                                                      #####
-#####   Input:      clean2010data.dta,and Images in Images folder of project                                    #####
+#####   Input:      clean2010data.dta, colorr_recode_subset.dta, and Images in Images folder of project         #####
 #####   Output:     This code does anaylsis on the clean data file. We create 4 figures :                       #####
 #####               Figure 2: Relation between Skin Color and Educational Attainment                            #####
 #####               Figure 3: Bar Graph of Average Ed by Skin Color for each country                            #####
@@ -64,10 +65,8 @@ colorr_recode_subset <- read.dta("colorr_recode_subset.dta")
 
 ```{r message=FALSE}
 ####################################################################################################################
-#####Creating Figure 2: Relation between Skin Color and Educational Attainment in Latin America and the Caribbean
-#####facet by the four specified regions, 
-#####Note: Categories with fewer than 30 respondents are combined with continuous groups 
-#####(for example, 1’s are combined with 2’s in many countries, in which case the combined category is reported as a 2)
+##### Creating Figure 2: Relation between Skin Color and Educational Attainment in Latin America and the Caribbean
+##### facet by the four specified regions
 ####################################################################################################################
 
 #figure 2 prep, calculate mean ed for figure 2
@@ -106,7 +105,7 @@ fig2 <- p + layer (geom="line", size = 1) +
                      values = c("dark red", "orange", "gold", "dark blue", "sky blue", "dark green", "light green",
                                 "dark red", "sky blue", "dark green", "orange", "gold",
                                 "dark red", "sky blue", "dark green", "orange", "gold", 
-                                "orange", "dark blue", "gold", "dark green", "dark red", "sky blue"))+
+                                "orange", "dark blue", "gold", "dark green", "dark red", "sky blue")) +
   xlab("Skin Shade") + 
   ylab("Mean Years of Education") +
   scale_y_continuous(limits = c(5,13), breaks = (5:13)) +
@@ -136,11 +135,11 @@ Figure 3 shows the mean levels of schooling for the residents with the lightest 
 
 **Here is the figure from the paper:**
 
-![](Images/Figure3_original.tiff)
+![](Images/Figure3_original.png)
 
 **Here is our replication:**
 
-![](Images/Figure3_rep.tiff)
+![](Images/Figure3_rep.png)
 
 **Here is our code:**
 
@@ -172,7 +171,7 @@ pais_ed$pais <- factor(pais_ed$pais,
                            "Colombia", "Honduras", "Argentina", "Belize", "Paraguay"))
 
 #Figure 3
-fig3 <- ggplot(pais_ed, aes( x = factor(tone), y = mean_ed, fill = tone))+
+fig3 <- ggplot(pais_ed, aes( x = factor(tone), y = mean_ed, fill = tone)) +
   ylim(0, 14) +
   ylab("Years of Schooling") + xlab("") +
   geom_bar(stat ="identity") + 
@@ -204,11 +203,11 @@ Since other factors besides color may affect years of schooling, we run a regres
 
 **Here is the Figure 4 from the paper:**
 
-![](Images/Figure4_original.tiff)
+![](Images/Figure4_original.png)
 
 **Here is our replication:** 
 
-![](Images/Figure4_rep.tiff)
+![](Images/Figure4_rep.png)
 
 **Here is our code:** 
 
