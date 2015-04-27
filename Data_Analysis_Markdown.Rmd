@@ -39,7 +39,7 @@ Figure 2 graphically represents the relation between educational attainment and 
 
 **Here is our code:** 
 
-```{r message=FALSE}
+```{r message = FALSE}
 #####################################################################################################################
 #####   Assignment: Replication Project (Part 1)                                                                #####
 #####   Due Date:   3/15/2015                                                                                   #####
@@ -48,7 +48,7 @@ Figure 2 graphically represents the relation between educational attainment and 
 #####   Output:     This code does anaylsis on the clean data file. We create 4 figures :                       #####
 #####               Figure 2: Relation between Skin Color and Educational Attainment                            #####
 #####               Figure 3: Bar Graph of Average Ed by Skin Color for each country                            #####
-#####               Appendix: OLS Models Predicting Years of Schooling in Latin American Countries, 2010        #####
+#####               Appendix: OLS Models Predicting Years of Schooling, 2010                                    #####
 #####               Figure 4: Effects of Skin Color and Other Factors on Educational Attainment                 #####
 #####################################################################################################################
 library(survey)
@@ -57,13 +57,14 @@ library(ggplot2)
 library(gridExtra)
 library(xtable)
 library(dplyr)
+library(grid)
 
-clean.2010 <-read.dta("clean2010data.dta")
+clean.2010 <- read.dta("clean2010data.dta")
 colorr_recode_subset <- read.dta("colorr_recode_subset.dta")
 ```
 
 
-```{r message=FALSE}
+```{r message = FALSE}
 ####################################################################################################################
 ##### Creating Figure 2: Relation between Skin Color and Educational Attainment in Latin America and the Caribbean
 ##### facet by the four specified regions
@@ -84,10 +85,29 @@ mean_ed_graph$region <- factor(mean_ed_graph$region,
                                    "Caribbean"))
 #order countries 
 mean_ed_graph$pais <- factor(mean_ed_graph$pais,
-                  levels = c("Panama", "Costa Rica", "Honduras",  "Mexico", "Guatemala", "El Salvador", "Nicaragua", 
-                           "Bolivia", "Peru", "Venezuela", "Colombia", "Ecuador",
-                           "Argentina", "Chile", "Paraguay", "Uruguay",  "Brazil", 
-                           "Suriname", "Jamaica", "Trinidad & Tobago",  "Guyana", "Dominican Republic", "Belize"))
+                  levels = c("Panama", 
+                             "Costa Rica", 
+                             "Honduras",  
+                             "Mexico", 
+                             "Guatemala", 
+                             "El Salvador", 
+                             "Nicaragua", 
+                             "Bolivia", 
+                             "Peru", 
+                             "Venezuela", 
+                             "Colombia", 
+                             "Ecuador",
+                             "Argentina", 
+                             "Chile", 
+                             "Paraguay", 
+                             "Uruguay",  
+                             "Brazil", 
+                             "Suriname", 
+                             "Jamaica", 
+                             "Trinidad & Tobago",  
+                             "Guyana", 
+                             "Dominican Republic", 
+                             "Belize"))
 
 #figure 2
 p <- ggplot(data = mean_ed_graph, aes(x = colorr_recode, y = mean_ed, color = pais))
@@ -95,17 +115,51 @@ fig2 <- p + layer (geom="line", size = 1) +
   facet_wrap(~region, scales = "free") +
   scale_color_manual("Countries, by Region\n",
                      labels = c("CENTRAL AMERICA & MEXICO\nPanama", 
-                                "Costa Rica", "Honduras",  "Mexico", "Guatemala", "El Salvador", "Nicaragua", 
+                                  "Costa Rica", 
+                                  "Honduras",  
+                                  "Mexico", 
+                                  "Guatemala", 
+                                  "El Salvador", 
+                                  "Nicaragua", 
                                 "ANDEAN\nBolivia", 
-                                "Peru", "Venezuela", "Colombia", "Ecuador",
+                                  "Peru", 
+                                  "Venezuela", 
+                                  "Colombia", 
+                                  "Ecuador",
                                 "SOUTHERN CONE & BRAZIL\nArgentina", 
-                                "Chile", "Paraguay", "Uruguay",  "Brazil", 
+                                  "Chile", 
+                                  "Paraguay", 
+                                  "Uruguay",  
+                                  "Brazil", 
                                 "CARIBBEAN\nSuriname", 
-                                "Jamaica", "Trinidad & Tobago",  "Guyana", "Dominican Republic", "Belize"),
-                     values = c("dark red", "orange", "gold", "dark blue", "sky blue", "dark green", "light green",
-                                "dark red", "sky blue", "dark green", "orange", "gold",
-                                "dark red", "sky blue", "dark green", "orange", "gold", 
-                                "orange", "dark blue", "gold", "dark green", "dark red", "sky blue")) +
+                                  "Jamaica", 
+                                  "Trinidad & Tobago",  
+                                  "Guyana", 
+                                  "Dominican Republic", 
+                                  "Belize"),
+                     values = c("dark red", 
+                                "orange", 
+                                "gold", 
+                                "dark blue", 
+                                "sky blue", 
+                                "dark green", 
+                                "light green",
+                                "dark red", 
+                                "sky blue", 
+                                "dark green", 
+                                "orange", 
+                                "gold",
+                                "dark red", 
+                                "sky blue", 
+                                "dark green", 
+                                "orange", 
+                                "gold", 
+                                "orange", 
+                                "dark blue", 
+                                "gold", 
+                                "dark green", 
+                                "dark red", 
+                                "sky blue")) +
   xlab("Skin Shade") + 
   ylab("Mean Years of Education") +
   scale_y_continuous(limits = c(5,13), breaks = (5:13)) +
@@ -150,41 +204,62 @@ Figure 3 shows the mean levels of schooling for the residents with the lightest 
 #####ordered by the size of the average difference between the two. 
 ####################################################################################################################
 
-#prep for Figure 3, create a new dataframe pais_ed
+#prep for Figure 3, create a new dataframe pais_edu with weighted means and CI's
 pais_ed <- colorr_recode_subset %>%
   filter(!is.na(colorr_recode), !is.na(ed), tone != "medium") %>%
   group_by(pais, tone) %>%
-  select(pais, tone, ed, weight1500) %>%
-  mutate(se = sd(ed)/sqrt(length(ed)), 
-         ed_n = length(ed), 
-         ci.lower = (weighted.mean(ed, weight1500) - 1 * qt(.975, (ed_n - 1)) * se), 
-         ci.upper = (weighted.mean(ed, weight1500) + 1 * qt(.975, (ed_n - 1)) * se)) %>%
-  group_by(pais, tone, ci.lower, ci.upper) %>%
-  summarise(mean_ed = weighted.mean(ed, weight1500))
+  select(pais, tone, ed, weight1500, upm, estratopri) 
+ 
+pais_ed$newid <- paste(pais_ed$upm, pais_ed$estratopri)
+mydesign <- svydesign(ids=~newid, strata=~ estratopri, data=pais_ed, weights=~weight1500)
+mean_edu <- svyby(~ed, ~pais+tone, mydesign, svymean, na.rm=T)
+conf <- confint(mean_edu) 
+pais_edu <- cbind(mean_edu, conf)
+pais_edu <- pais_edu %>%
+  rename(ci.lower = `2.5 %`, ci.upper = `97.5 %`)
+
 
 #fig 3 prep, order countries 
-pais_ed$pais <- factor(pais_ed$pais,
-                levels = c("Bolivia", "Uruguay", "Peru", "Guatemala", "Suriname", 
-                           "Mexico", "Panama", "Dominican Republic", "Jamaica",  
-                           "El Salvador", "Trinidad & Tobago", "Guyana", "Chile", 
-                           "Costa Rica", "Venezuela", "Brazil", "Ecuador",  "Nicaragua", 
-                           "Colombia", "Honduras", "Argentina", "Belize", "Paraguay"))
+pais_edu$pais <- factor(pais_edu$pais,
+                levels = c("Bolivia", 
+                           "Uruguay", 
+                           "Peru", 
+                           "Guatemala", 
+                           "Suriname", 
+                           "Mexico", 
+                           "Panama", 
+                           "Dominican Republic", 
+                           "Jamaica",  
+                           "El Salvador", 
+                           "Trinidad & Tobago", 
+                           "Guyana", 
+                           "Chile", 
+                           "Costa Rica", 
+                           "Venezuela", 
+                           "Brazil", 
+                           "Ecuador",  
+                           "Nicaragua", 
+                           "Colombia", 
+                           "Honduras", 
+                           "Argentina", 
+                           "Belize", 
+                           "Paraguay"))
 
 #Figure 3
-fig3 <- ggplot(pais_ed, aes( x = factor(tone), y = mean_ed, fill = tone)) +
+fig3 <- ggplot(pais_edu, aes( x = factor(tone), y = ed, fill = tone)) +
   ylim(0, 14) +
   ylab("Years of Schooling") + xlab("") +
   geom_bar(stat ="identity") + 
   geom_errorbar(aes(ymin = ci.lower, ymax = ci.upper)) + 
   facet_wrap(~ pais, ncol = 2) + coord_flip() +
-  geom_text(aes(label = round(mean_ed, 1)), size = 3.5, hjust = -.7) +
+  geom_text(aes(label = round(ed, 1)), size = 3.5, hjust = -.7) +
   scale_fill_brewer(palette = "Greens") +
   theme(legend.position = "none") +
   scale_x_discrete(labels = c("Dark Skin", "Light Skin")) +
   ggtitle("Average Eduacational Attainment for Persons with \n \nDarkest and Lightest Skin Colors in the Americas, 2010") +
   theme(plot.title = element_text(lineheight =.6, face = "bold", size = 12),
         strip.text.x = element_text(face = "bold", hjust = 0), 
-        strip.background = element_rect(colour ="white", fill ="white"), 
+        strip.background = element_rect(colour = "white", fill = "white"), 
         panel.background = element_rect(fill = 'white', colour = 'white'),
         axis.text = element_text(colour = "black"), 
         axis.title = element_text(face = "bold")) 
@@ -237,7 +312,8 @@ eight_pais <- colorr_recode_subset %>%
          Dominican_Republic = ifelse(pais == "Dominican Republic", 1, 0))
 
 #model 1
-svy<- svydesign(ids=~upm, strata=~ estratopri, data=eight_pais, weights=~weight1500, nest=TRUE)
+eight_pais$newid <- paste(eight_pais$upm, eight_pais$estratopri)
+svy <- svydesign(ids=~newid, strata=~ estratopri, data=eight_pais, weights=~weight1500)
 model1.graph <- svyglm(scale(ed) ~ scale(colorr) + 
                                scale(parent_occ) + 
                                scale(Urban) + 
@@ -250,7 +326,8 @@ model1.graph <- svyglm(scale(ed) ~ scale(colorr) +
                                scale(Bolivia) + 
                                scale(Peru) + 
                                scale(Dominican_Republic), svy)
-                              
+
+           
 #creating data frame of coefficients and CI's
 graph.coef <- summary(model1.graph)$coefficients[2:6, 1]
 model1.CI <- confint(model1.graph)
@@ -265,11 +342,15 @@ frame <- data.frame(variable = labels,
                     ci.upper = model1.CIupper)
 
 #reorder variables
-frame$variable.order <- factor(frame$variable, levels = c("Female", "Age", "Urban", "Parental Occupation", "Skin Color"))
+frame$variable.order <- factor(frame$variable, levels = c("Female", 
+                                                          "Age", 
+                                                          "Urban", 
+                                                          "Parental Occupation", 
+                                                          "Skin Color"))
 
 
 #Create Figure 4
-fig4<- ggplot(frame, aes(y = coefficient, x = variable.order)) + geom_point() +
+fig4 <- ggplot(frame, aes(y = coefficient, x = variable.order)) + geom_point() +
   geom_pointrange(aes(ymin = ci.lower,  ymax = ci.upper)) +
   geom_hline(yintercept = 0, color ="dark green", size = 1) +
   coord_flip() +
@@ -284,6 +365,136 @@ fig4.note <- arrangeGrob(fig4,
                          sub = textGrob("Source: Americas Barometer by LAPOP",
                                         x = .1, hjust = 0, vjust = 0,
                                         gp = gpar(fontface = "italic", fontsize = 10)))
+```
+
+***Here is our expansion:***
+
+We re-run a model sepratly for each country, so that we can see the disaggregated coefficients.
+
+**Here is our new graphic:** 
+
+![](Images/rep.png)
+
+**Here is our code:** 
+
+```{r message=FALSE}
+
+#extension:
+
+#prep
+country.names <- c("Brazil", 
+                   "Mexico", 
+                   "Guatemala", 
+                   "Colombia", 
+                   "Ecuador", 
+                   "Bolivia", 
+                   "Peru", 
+                   "Dominican Republic")
+
+country.graph <- list()
+country.graph.coef <- list()
+country.CI <- list()
+country.CIlower <- list()
+country.CIupper <- list()
+frame <- list()
+country.fig <- list()
+country.fig.note <- list()
+
+#loop through for each country
+
+for (name in country.names) {
+  country.graph[[name]] <- lm(scale(ed) ~ scale(colorr) + 
+                               scale(parent_occ) + 
+                               scale(Urban) + 
+                               scale(q2) + 
+                               scale(Female), data= filter(eight_pais, pais == name)) 
+  
+country.graph.coef[[name]] <- summary(country.graph[[name]])$coefficients[2:6, 1]
+country.CI[[name]] <- confint(country.graph[[name]])
+country.CIlower[[name]] <- country.CI[[name]][2:6 , 1]
+country.CIupper[[name]] <- country.CI[[name]][2:6 , 2]
+
+labels = c("Skin Color","Parental Occupation", "Urban", "Age", "Female")
+
+frame[[name]] <- data.frame(variable = labels,
+                    coefficient = country.graph.coef[[name]],
+                    ci.lower = country.CIlower[[name]],
+                    ci.upper = country.CIupper[[name]])
+
+#reorder variables
+frame[[name]]$variable.order <- factor(frame[[name]]$variable, levels = c("Female", 
+                                                                          "Age", 
+                                                                          "Urban", 
+                                                                          "Parental Occupation", 
+                                                                          "Skin Color"))
+  
+country.fig[[name]] <- ggplot(frame[[name]], aes(y = coefficient, x = variable.order)) + geom_point() +
+  geom_pointrange(aes(ymin = ci.lower,  ymax = ci.upper)) +
+  geom_hline(yintercept = 0, color = "dark green", size = 1) +
+  ylim(-.5, .5) +
+  coord_flip() +
+  ylab("") + xlab("") +
+  theme_classic() +
+  theme(plot.title = element_text(lineheight = .6, face = "bold"),
+        axis.text = element_text(colour = "black", face = "bold"), 
+        axis.title = element_text(face = "bold"))
+
+}
+
+country.fig.note.brazil <- arrangeGrob(country.fig[["Brazil"]], 
+                         sub = textGrob("Brazil",
+                                        x = 0, hjust = -1, vjust = 0,
+                                        gp = gpar(fontface = "bold", fontsize = 12)))
+
+country.fig.note.mexico <- arrangeGrob(country.fig[["Mexico"]], 
+                         sub = textGrob("Mexico",
+                                       x = 0, hjust = -1, vjust = 0,
+                                        gp = gpar(fontface = "bold", fontsize = 12)))
+
+country.fig.note.guatemala <- arrangeGrob(country.fig[["Guatemala"]], 
+                         sub = textGrob("Guatemala",
+                                        x = 0, hjust = -1, vjust = 0,
+                                        gp = gpar(fontface = "bold", fontsize = 12)))
+
+country.fig.note.colombia <- arrangeGrob(country.fig[["Colombia"]], 
+                         sub = textGrob("Colombia",
+                                       x = 0, hjust = -1, vjust = 0,
+                                        gp = gpar(fontface = "bold", fontsize = 12)))
+
+country.fig.note.ecuador <- arrangeGrob(country.fig[["Ecuador"]], 
+                         sub = textGrob("Ecuador",
+                                       x = 0, hjust = -1, vjust = 0,
+                                        gp = gpar(fontface = "bold", fontsize = 12)))
+
+country.fig.note.bolivia <- arrangeGrob(country.fig[["Bolivia"]], 
+                         sub = textGrob("Bolivia",
+                                        x = 0, hjust = -1, vjust = 0,
+                                        gp = gpar(fontface = "bold", fontsize = 12)))
+
+country.fig.note.peru <- arrangeGrob(country.fig[["Peru"]], 
+                         sub = textGrob("Peru",
+                                       x = 0, hjust = -1, vjust = 0,
+                                        gp = gpar(fontface = "bold", fontsize = 12)))
+
+country.fig.note.dominican_republic <- arrangeGrob(country.fig[["Dominican Republic"]], 
+                         sub = textGrob("Dominican Republic",
+                                       x = 0, hjust = -1, vjust = 0,
+                                        gp = gpar(fontface = "bold", fontsize = 12)))
+                 
+
+country_grid <- arrangeGrob(country.fig.note.brazil, 
+          country.fig.note.mexico,
+          country.fig.note.guatemala,
+          country.fig.note.colombia,
+          country.fig.note.ecuador,
+          country.fig.note.bolivia,
+          country.fig.note.peru,
+          country.fig.note.dominican_republic,
+          nrow = 4, ncol = 2,
+          main = textGrob("Effects of Skin Color and Other Factors on\n Educational Attainment", 
+                          gp = gpar(fontface = "bold", fontsize = 20)),
+          sub = textGrob("95 Percent C.I. (Design -Effects Based)", 
+                          gp = gpar(fontface = "bold", fontsize = 18)))
 
 ```
 

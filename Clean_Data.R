@@ -39,6 +39,7 @@ clean.2010 <- clean.2010 %>%
                   ifelse(pais == "Argentina" | pais == "Chile" | pais == "Paraguay" | pais == "Uruguay"| pais == "Brazil", "Southern Cone and Brazil", "Caribbean")))) 
 
 # create variable for social orgin
+unique(clean.2010$ocup1anc)
 clean.2010 <- clean.2010 %>%
   mutate(parent_occ = ifelse(ocup1anc == "Professional, intellectual and scientist", 10, 
                       ifelse(ocup1anc == "Director (manager, head of the department, supervisor)", 9,
