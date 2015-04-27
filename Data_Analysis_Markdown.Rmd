@@ -204,7 +204,7 @@ Figure 3 shows the mean levels of schooling for the residents with the lightest 
 #####ordered by the size of the average difference between the two. 
 ####################################################################################################################
 
-#prep for Figure 3, create a new dataframe pais_edu with weighted means and CI's
+#prep for Figure 3, create a new dataframe pais_ed with weighted means and CIs
 pais_ed <- colorr_recode_subset %>%
   filter(!is.na(colorr_recode), !is.na(ed), tone != "medium") %>%
   group_by(pais, tone) %>%
@@ -313,7 +313,7 @@ eight_pais <- colorr_recode_subset %>%
 
 #model 1
 eight_pais$newid <- paste(eight_pais$upm, eight_pais$estratopri)
-svy <- svydesign(ids=~newid, strata=~ estratopri, data=eight_pais, weights=~weight1500)
+svy <- svydesign(ids = ~ newid, strata = ~ estratopri, data = eight_pais, weights = ~ weight1500)
 model1.graph <- svyglm(scale(ed) ~ scale(colorr) + 
                                scale(parent_occ) + 
                                scale(Urban) + 
@@ -357,7 +357,7 @@ fig4 <- ggplot(frame, aes(y = coefficient, x = variable.order)) + geom_point() +
   ylab("95 Percent C.I. (Design -Effects Based)") + xlab("") +
   theme_classic() +
   ggtitle("Effects of Skin Color and Other Factors on\n\n Educational Attainment in Select Latin American \n\nCountries") +
-  theme(plot.title = element_text(lineheight =.6, face ="bold", size = 12),
+  theme(plot.title = element_text(lineheight = .6, face ="bold", size = 12),
         axis.text = element_text(colour = "black", face = "bold"), 
         axis.title = element_text(face = "bold"))
 
@@ -369,7 +369,7 @@ fig4.note <- arrangeGrob(fig4,
 
 ***Here is our expansion:***
 
-We re-run a model sepratly for each country, so that we can see the disaggregated coefficients.
+We re-run a model separately for each country, so that we can see the disaggregated coefficients.
 
 **Here is our new graphic:** 
 
@@ -498,6 +498,118 @@ country_grid <- arrangeGrob(country.fig.note.brazil,
 
 ```
 
+
+In order to explore other possible ways skin color could predict inequality, we decided to look at the income variable.
+**Here is our new graphic:** 
+
+![](Images/Figure6_ext.jpeg)
+
+**Here is our code:** 
+
+```{r}
+#Grab income variable from the main data frame and creat new dataframe colorr_income
+
+data <- read.dta("1626360926english_merge_2010_americasbarometer_v14v3.dta")
+new_data <- data %>%
+  filter(pais != "Canada", pais != "United States", pais != "Haiti" )
+
+colorr_recode_subset$income <- new_data$q10
+colorr_income <- colorr_recode_subset %>%
+  filter(pais %in% c("Brazil", "Mexico", "Guatemala", "Colombia", 
+                     "Ecuador", "Bolivia", "Peru", "Dominican Republic")) %>%
+   filter(!is.na(pais), !is.na(income), !is.na(ed), !is.na(q2), !is.na(q1), 
+          !is.na(parent_occ), !is.na(ur), !is.na(colorr)) %>%
+  mutate(ed = as.numeric(ed),
+         income = as.numeric(income),
+         parent_occ = as.numeric(parent_occ),
+         age = as.numeric(q2), 
+         Female = ifelse(q1 == "Female", 1, ifelse(q1 == "Male", 0, NA)), 
+         Urban = ifelse(ur == "Urban", 1, ifelse(ur == "Rural", 0, NA)),
+         Brazil = ifelse(pais == "Brazil", 1, 0),
+         Mexico = ifelse(pais == "Mexico", 1, 0),
+         Guatemala = ifelse(pais == "Guatemala", 1, 0),
+         Colombia = ifelse(pais == "Colombia", 1, 0),
+         Ecuador = ifelse(pais == "Ecuador", 1, 0),
+         Bolivia = ifelse(pais == "Bolivia", 1, 0),
+         Peru = ifelse(pais == "Peru", 1, 0),
+         Dominican_Republic = ifelse(pais == "Dominican Republic", 1, 0))
+
+     
+```
+
+In the data, income is an ordinal variable, rated on a scale of 1-10. This violates one of the assumptions of linear regression that the interval between values be equal. In the case of income, a value of 1 corresponds to an income of $0-25, while a value of 2 corresponds to an income of $25-50 and so on. However, the intervals are not equal. In order to run a linear regression on this variable, one method is to pick the mid-point of the range that the summary value represents.
+
+```{r}
+
+#Pick mid-values. For the highest value (above $750), pick $800.
+
+ colorr_income <- colorr_income  %>% 
+  mutate(mid_income = ifelse(income == 0, 0, 
+                      ifelse(income == 1, 12.5, 
+                      ifelse(income == 2, 37.5, 
+                      ifelse(income == 3, 75,
+                      ifelse(income == 4, 125,
+                      ifelse(income == 5, 175,
+                      ifelse(income == 6, 250,
+                      ifelse(income == 7, 350,
+                      ifelse(income == 8, 450,
+                      ifelse(income == 9, 625,
+                      ifelse(income == 10, 800, NA))))))))))))
+
+colorr_income <- colorr_income %>%
+  mutate(mid_income = as.numeric(mid_income))
+
+#Specify survey design
+colorr_income$newid <- paste(colorr_income$upm, colorr_income$estratopri)
+svy_income <- svydesign(ids = ~ newid, strata = ~ estratopri, data = colorr_income, weights = ~ weight1500)
+
+#Run regression
+model2_graph <- svyglm(scale(mid_income) ~ scale(colorr) + 
+                        scale(ed) +
+                        scale(parent_occ) + 
+                        scale(Urban) + 
+                        scale(q2) + 
+                        scale(Female) + 
+                        scale(Mexico) + 
+                        scale(Guatemala) + 
+                        scale(Colombia) + 
+                        scale(Ecuador) + 
+                        scale(Bolivia) + 
+                        scale(Peru) + 
+                        scale(Dominican_Republic), svy_income)
+
+#Add confidence intervals and coefficients
+
+model2_coef <- summary(model2_graph)$coefficients[2:7, 1]
+model2_ci <- confint(model2_graph)
+model2_cilower <- model2_ci[2:7, 1]
+model2_ciupper <- model2_ci[2:7, 2]
+
+model2_labels <- c("Skin Color", "Education", "Parental Occupation", "Urban", "Age", "Female")
+
+#Create dataframe
+model2_frame <- data.frame(variable = model2_labels,
+                           coefficient = model2_coef,
+                           ci_lower = model2_cilower,
+                           ci_upper = model2_ciupper)
+
+#Create Figure 5
+fig5 <- ggplot(data = model2_frame, aes(x = variable, y = coefficient)) + geom_point() +
+  geom_pointrange(aes(ymin = ci_lower,  ymax = ci_upper)) +
+  geom_hline(yintercept = 0, color ="dark green", size = 1) +
+  coord_flip() +
+  ylab("95 Percent C.I. (Design-Effects Based)") + xlab("") +
+  theme_classic() +
+  ggtitle("Effects of Skin Color and Other Factors on\n\n Income in Select Latin American \n\nCountries") +
+  theme(plot.title = element_text(lineheight =.6, face ="bold", size = 12),
+        axis.text = element_text(colour = "black", face = "bold"), 
+        axis.title = element_text(face = "bold"))
+
+fig5_note <- arrangeGrob(fig5, sub = textGrob("Source: Americas Barometer by LAPOP", x = .1, hjust = 0, vjust = 0, gp = gpar(fontface = "italic", fontsize = 10)))
+
+```
+
+The results above are significant for the study because they bolster Telles and Steele's claim "that the bulk of countries in Latin America and the Caribbean may be safely characterized as pigmentocracies" (2012:6). From Figure 5, it is evident that skin color and education are important predictors of income while other variables such as gender, age, urban/rural domicile, and parental occupation do not yield any significant association.
 
 
 
