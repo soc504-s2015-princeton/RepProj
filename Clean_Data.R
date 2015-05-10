@@ -7,39 +7,42 @@
 #####   Notes:      This is the English merged 2010 data downloaded from http://www.americasbarometer.org       #####
 #####               This file reads in the raw data and preps for analysis. In this file we:                    ##### 
 #####                      1-subset to 23/26 total countries                                                    #####
-#####                      2-create 4 new variables (tone, region,colorr_recode & parent_occ) for anaylsis      #####
+#####                      2-create 4 new variables (tone, region, colorr_recode & parent_occ) for analysis     #####
 #####################################################################################################################
 
-#install.packages("foreign", "broom")
 
-library(foreign)
-library(dplyr)
-library(ggplot2)
-library(broom)
-
-#getwd()
-setwd("~/Desktop/R working directory/RepProj")
+suppressMessages(library(foreign))
+suppressMessages(library(dplyr))
+#we use plyr as well but is loaded later because it interferes with dplyr
+#suppressMessages(library(plyr))
 
 #read in orginal data
 merged.2010 <- read.dta("1626360926english_merge_2010_americasbarometer_v14v3.dta", convert.factors = TRUE, missing.type = TRUE, convert.underscore = TRUE, warn.missing.labels = TRUE) 
 
 #create cleaned data file
-#subset to 23 countires for analysis- exclude Canada, US, and Haiti
+#subset to 23 countries for analysis — exclude Canada, US, and Haiti
+
 clean.2010 <- merged.2010 %>%
-    filter(!pais == "Haiti", !pais == "Canada", !pais == "United States") %>%  
-    select(year, pais, idnum, weight1500, estratopri, upm, ur, q1, ed, colorr, ocup1anc, q2, weight1500) 
-      
+  filter(!pais == "Haiti", !pais == "Canada", !pais == "United States") %>%  
+  select(year, pais, idnum, weight1500, estratopri, upm, ur, q1, ed, colorr, ocup1anc, q2, q10, weight1500) 
+
 #redefine factor
+
 clean.2010$pais <- factor(clean.2010$pais)
 
-#create new var for analysis region
-clean.2010 <- clean.2010 %>% 
-  mutate(region = ifelse(pais == "Panama" | pais == "Costa Rica"| pais == "Honduras"| pais == "Mexico"| pais =="Guatemala"| pais == "El Salvador"| pais == "Nicaragua", "Central America and Mexico",
-                  ifelse(pais == "Bolivia"| pais == "Peru"| pais == "Venezuela"| pais == "Colombia"| pais == "Ecuador", "Andean",
-                  ifelse(pais == "Argentina" | pais == "Chile" | pais == "Paraguay" | pais == "Uruguay"| pais == "Brazil", "Southern Cone and Brazil", "Caribbean")))) 
+#rename variables
 
-# create variable for social orgin
-unique(clean.2010$ocup1anc)
+clean.2010 <- rename(clean.2010, country = pais, sex = q1, age = q2, income = q10)
+
+#create new variable for analysis region
+
+clean.2010 <- clean.2010 %>% 
+  mutate(region = ifelse(country == "Panama" | country == "Costa Rica"| country == "Honduras"| country == "Mexico"| country =="Guatemala"| country == "El Salvador"| country == "Nicaragua", "Central America and Mexico",
+                  ifelse(country == "Bolivia"| country == "Peru"| country == "Venezuela"| country == "Colombia"| country == "Ecuador", "Andean",
+                  ifelse(country == "Argentina" | country == "Chile" | country == "Paraguay" | country == "Uruguay"| country == "Brazil", "Southern Cone and Brazil", "Caribbean")))) 
+
+#create variable for social origin
+
 clean.2010 <- clean.2010 %>%
   mutate(parent_occ = ifelse(ocup1anc == "Professional, intellectual and scientist", 10, 
                       ifelse(ocup1anc == "Director (manager, head of the department, supervisor)", 9,
@@ -54,75 +57,103 @@ clean.2010 <- clean.2010 %>%
                       ifelse(ocup1anc == "Agricultural worker (works on land for others)", 1, 
                       ifelse(ocup1anc == "Artisan, craftsperson", 5,
                       ifelse(ocup1anc == "Domestic service", 1,
-                      ifelse(ocup1anc == "Laborer", 2, 
+                      ifelse(ocup1anc == "Laborer", 2,
                       ifelse(ocup1anc == "Member of the armed forces or protection and security services (the police, fireman, watchman, etc.)", 5, NA)))))))))))))))) 
 
 clean.2010$parent_occ <- factor(clean.2010$parent_occ)
 
 #check for 39,238 respondents in 23 of the 26 countries, as stated in paper
+
+clean.2010 %>%
+  summarise(n())
+
+#save clean.2010
+
 write.dta(clean.2010, "clean2010data.dta")
 
 #output a dataset for graphs
 #get counts for colorr by country in temporary dataset
-test <- xtabs(formula = ~colorr + pais , data = clean.2010, exclude = "97 Colud not be classified")
-test <- as.data.frame(test)
-test$colorr <- as.numeric(test$colorr)
 
-#write a loop to organize recode
-#the loop that crashes freqs, first for low end values of colorr, then for high end to flag categories to collapse
-for(country in unique(test$pais)){
-  minInd = min(which(test$pais == country)) - 1
+colorr_index <- xtabs(formula = ~colorr + country , data = clean.2010, exclude = "97 Colud not be classified") #typo in the data, not our own
+colorr_index <- as.data.frame(colorr_index)
+colorr_index$colorr <- as.numeric(colorr_index$colorr)
+
+#write a loop to organize recode of respondent skin color (colorr)
+#the authors combine skin color categories (1-11) with fewer than 30 respondents with contiguous groups 
+#this addition is towards the middle value (i.e. 6)
+#for instance 1s are added to 2s to 3s and 11s to 10s to 9s and so on until that category has more than 30 people
+#this loop crashes freqs, first for low end values of colorr, then for high end to flag categories to collapse
+
+for(country in unique(colorr_index$country)){
+  minInd = min(which(colorr_index$country == country)) - 1
   for (colorr in 1:6) { 
-    if (test[colorr +minInd, "Freq"] <= 30) {
-      test[colorr +minInd + 1, "Freq"] <- test[colorr + minInd, "Freq"] + test[colorr + minInd + 1, "Freq"]
-      test[colorr +minInd, "Freq"] <- 0 
+    if (colorr_index[colorr + minInd, "Freq"] <= 30) {
+      colorr_index[colorr + minInd + 1, "Freq"] <- colorr_index[colorr + minInd, "Freq"] + colorr_index[colorr + minInd + 1, "Freq"]
+      colorr_index[colorr + minInd, "Freq"] <- 0 
     }
   }
 }
 
-for(country in unique(test$pais)){
-  minInd = min(which(test$pais == country)) - 1
+for(country in unique(colorr_index$country)){
+  minInd = min(which(colorr_index$country == country)) - 1
   for (colorr in 11:6) { 
-    if (test[colorr + minInd, "Freq"] <= 30) {
-        test[colorr + minInd - 1, "Freq"] <- test[colorr + minInd, "Freq"] + test[colorr + minInd - 1, "Freq"]
-        test[colorr + minInd, "Freq"] <- 0 
+    if (colorr_index[colorr + minInd, "Freq"] <= 30) {
+      colorr_index[colorr + minInd - 1, "Freq"] <- colorr_index[colorr + minInd, "Freq"] + colorr_index[colorr + minInd - 1, "Freq"]
+      colorr_index[colorr + minInd, "Freq"] <- 0 
     }
   }
 }
 
-#Make a dataframe of what the minimum & maximum values are by country
-min_max <- test %>%
-  group_by(pais) %>%
+
+#make a dataframe of what the minimum and maximum skin color values are by country
+min_max <- colorr_index %>%
   filter(Freq > 0) %>%
-  select(colorr) %>%
+  select(country, colorr) %>%
+  group_by(country) %>%
   summarise(min = min(colorr), max = max(colorr))
 
-####collapse in single df with recoded values
-cty.vec <- as.character(unique(test$pais))
+#collapse in single df with recoded values
+cty.vec <- as.character(unique(colorr_index$country))
 
 colorr_recode_subset <- clean.2010 %>%
   filter(!is.na(colorr)) %>%
-  select(colorr, pais, region, ed, weight1500, parent_occ, q1, q2, ur, estratopri, upm) %>%
+  select(colorr, country, region, ed, weight1500, parent_occ, sex, age, income, ur, estratopri, upm) %>%
   mutate(colorr = as.numeric(colorr)) %>%
-  arrange(pais, colorr) 
+  arrange(country, colorr) 
 
-library(plyr)
+#load plyr now because it interferes with dplyr if it is loaded earlier
+
+suppressMessages(library(plyr)) 
+
+#this loop is firstly mapping the recoded values back in to the data
+#secondly it is creating a variable, tone, derived from skin color categorized in to light (1-3), medium (4-5), dark (6 <)
 colorr_recode_subset <- ldply(cty.vec, function(x){
   out <- colorr_recode_subset %>%
-    filter(pais == x) %>%
-    mutate(colorr_recode = ifelse(colorr <= filter(min_max, pais == x)$min, filter(min_max, pais == x)$min, 
-                           ifelse(colorr >= filter(min_max, pais == x)$max, filter(min_max, pais == x)$max, colorr))) %>%
+    filter(country == x) %>%
+    mutate(colorr_recode = ifelse(colorr <= filter(min_max, country == x)$min, filter(min_max, country == x)$min, 
+                           ifelse(colorr >= filter(min_max, country == x)$max, filter(min_max, country == x)$max, colorr))) %>%
     mutate(tone = ifelse(colorr_recode == 1 | colorr_recode == 2 | colorr_recode == 3, "light", 
-                  ifelse(colorr_recode == 4 | colorr_recode == 5, "medium", "dark")))
+                         ifelse(colorr_recode == 4 | colorr_recode == 5, "medium", "dark")))
 } )
 
-#recode Honduras and Nicaragua
-colorr_recode_subset$colorr_recode <- ifelse(colorr_recode_subset$pais == "Honduras" & 
-                                             colorr_recode_subset$colorr_recode == 10, 9, 
+#detach plyr
+
+detach(package:plyr)
+
+#recode skin color values for Honduras and Nicaragua
+#we hardcode Honduras and Nicaragua because they are quirky and don't adhere to the recode rules above
+
+colorr_recode_subset$colorr_recode <- ifelse(colorr_recode_subset$country == "Honduras" & 
+                                               colorr_recode_subset$colorr_recode == 10, 9, 
                                              colorr_recode_subset$colorr_recode)
 
-colorr_recode_subset$colorr_recode <- ifelse(colorr_recode_subset$pais == "Nicaragua" & 
-                                             colorr_recode_subset$colorr_recode == 9, 8, 
+colorr_recode_subset$colorr_recode <- ifelse(colorr_recode_subset$country == "Nicaragua" & 
+                                               colorr_recode_subset$colorr_recode == 9, 8, 
                                              colorr_recode_subset$colorr_recode)
+#again check for 39,328 observations
+colorr_index %>%
+  summarise(n())
 
+#save colorr_recode_subset
 write.dta(colorr_recode_subset, "colorr_recode_subset.dta")
+
