@@ -34,14 +34,14 @@ clean.2010$pais <- factor(clean.2010$pais)
 
 clean.2010 <- rename(clean.2010, country = pais, sex = q1, age = q2, income = q10)
 
-#create new variable for analysis region
+#create new variable region
 
 clean.2010 <- clean.2010 %>% 
   mutate(region = ifelse(country == "Panama" | country == "Costa Rica"| country == "Honduras"| country == "Mexico"| country =="Guatemala"| country == "El Salvador"| country == "Nicaragua", "Central America and Mexico",
                   ifelse(country == "Bolivia"| country == "Peru"| country == "Venezuela"| country == "Colombia"| country == "Ecuador", "Andean",
                   ifelse(country == "Argentina" | country == "Chile" | country == "Paraguay" | country == "Uruguay"| country == "Brazil", "Southern Cone and Brazil", "Caribbean")))) 
 
-#create variable for social origin
+#create variable parent_occ based on occupational prestige
 
 clean.2010 <- clean.2010 %>%
   mutate(parent_occ = ifelse(ocup1anc == "Professional, intellectual and scientist", 10, 
@@ -106,6 +106,7 @@ for(country in unique(colorr_index$country)){
 
 
 #make a dataframe of what the minimum and maximum skin color values are by country
+
 min_max <- colorr_index %>%
   filter(Freq > 0) %>%
   select(country, colorr) %>%
@@ -113,6 +114,7 @@ min_max <- colorr_index %>%
   summarise(min = min(colorr), max = max(colorr))
 
 #collapse in single df with recoded values
+
 cty.vec <- as.character(unique(colorr_index$country))
 
 colorr_recode_subset <- clean.2010 %>%
@@ -127,6 +129,7 @@ suppressMessages(library(plyr))
 
 #this loop is firstly mapping the recoded values back in to the data
 #secondly it is creating a variable, tone, derived from skin color categorized in to light (1-3), medium (4-5), dark (6 <)
+
 colorr_recode_subset <- ldply(cty.vec, function(x){
   out <- colorr_recode_subset %>%
     filter(country == x) %>%
@@ -144,16 +147,19 @@ detach(package:plyr)
 #we hardcode Honduras and Nicaragua because they are quirky and don't adhere to the recode rules above
 
 colorr_recode_subset$colorr_recode <- ifelse(colorr_recode_subset$country == "Honduras" & 
-                                               colorr_recode_subset$colorr_recode == 10, 9, 
+                                             colorr_recode_subset$colorr_recode == 10, 9, 
                                              colorr_recode_subset$colorr_recode)
 
 colorr_recode_subset$colorr_recode <- ifelse(colorr_recode_subset$country == "Nicaragua" & 
-                                               colorr_recode_subset$colorr_recode == 9, 8, 
+                                             colorr_recode_subset$colorr_recode == 9, 8, 
                                              colorr_recode_subset$colorr_recode)
+
 #again check for 39,328 observations
+
 colorr_index %>%
   summarise(n())
 
 #save colorr_recode_subset
+
 write.dta(colorr_recode_subset, "colorr_recode_subset.dta")
 
