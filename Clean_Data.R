@@ -13,10 +13,10 @@
 
 suppressMessages(library(foreign))
 suppressMessages(library(dplyr))
-#we use plyr as well but is loaded later because it interferes with dplyr
+#we use plyr as well but it is loaded later because it interferes with dplyr
 #suppressMessages(library(plyr))
 
-#read in orginal data
+#read in original data
 merged.2010 <- read.dta("1626360926english_merge_2010_americasbarometer_v14v3.dta", convert.factors = TRUE, missing.type = TRUE, convert.underscore = TRUE, warn.missing.labels = TRUE) 
 
 #create cleaned data file
@@ -31,6 +31,7 @@ clean.2010 <- merged.2010 %>%
 clean.2010$pais <- factor(clean.2010$pais)
 
 #rename variables
+#we don't rename the variables related to survey design (estratropri, weight1500, and upm)
 
 clean.2010 <- rename(clean.2010, country = pais, sex = q1, age = q2, income = q10)
 
@@ -41,7 +42,7 @@ clean.2010 <- clean.2010 %>%
                   ifelse(country == "Bolivia"| country == "Peru"| country == "Venezuela"| country == "Colombia"| country == "Ecuador", "Andean",
                   ifelse(country == "Argentina" | country == "Chile" | country == "Paraguay" | country == "Uruguay"| country == "Brazil", "Southern Cone and Brazil", "Caribbean")))) 
 
-#create variable parent_occ based on occupational prestige
+#create variable parent_occ based on parental occupational prestige
 
 clean.2010 <- clean.2010 %>%
   mutate(parent_occ = ifelse(ocup1anc == "Professional, intellectual and scientist", 10, 
