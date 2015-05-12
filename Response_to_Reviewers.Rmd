@@ -1,0 +1,32 @@
+---
+title: "Response to Reviewers"
+author: "Megan and Kalyani"
+date: "May 11, 2015"
+output: html_document
+---
+
+We are very grateful to Matt Salganik, Angela Dixon, Grace Tien, and Yari Perez for their helpful and insightful feedback. 
+
+We have made the following changes on the basis of this feedback:
+
+1. Renamed variables for clarity 
+
+2. Fixed spacing and added more comments to aid in readability 
+
+3. Disaggregated nested functions
+
+However, after much deliberation, we decided not to or were unable to make the following changes:
+
+1. Matt suggested using the broom package to report confidence intervals. While a great suggestion, this actually appeared to be equally/more complicated.
+
+2. Grace suggested that we present the legend for Figure 2 in a way that was easier to follow. This is a valid concern, however this was not possible given the limitations of the ggplot functions we used.
+
+3. Angela and Grace suggested avoiding some repetitious code in Figure 5. While this was again a wonderful suggestion, we were unfortunately unsuccessful in our repeated attempts to do so.
+
+4. Matt suggested plotting Figure 5 by coefficients rather than country. This is a great suggestion, however we wanted Figure 5 to be easily comparable to Figure 4 in order to convey the heterogeneity within Latin America and the Caribbean. 
+
+Finally, Yari asked about the variable estratopri. Estratopri along with upm and weight1500 are part of the survey design. More information on the survey design of the AmericasBarometer can be found at: http://www.vanderbilt.edu/lapop/docs/AmericasBarometer_weighting_scheme_all_years_of_AB_v2.pdf
+
+We would like to thank Eddie Telles and Liza Steele, the authors of this paper, for answering our questions and graciously providing us their Stata code.
+
+Megan and Kalyani
